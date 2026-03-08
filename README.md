@@ -1,2 +1,8 @@
-# assume-cli
-A CLI and daemon for managing temporary AWS credentials via STS using boto3-refresh-session, exposing automatically refreshed credentials to shells, SDKs, tools, and more.
+<p align="center">
+  <img 
+    src="https://raw.githubusercontent.com/michaelthomasletts/assume/refs/heads/main/docs/_static/transparent_header_assume.png" 
+    alt="assume" 
+  />
+</p>
+
+assume is actively under development.

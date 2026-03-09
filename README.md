@@ -1,6 +1,6 @@
 <p align="center">
   <img 
-    src="https://raw.githubusercontent.com/michaelthomasletts/assume-cli/refs/heads/main/docs/_static/header_assume.png" 
+    src="https://raw.githubusercontent.com/michaelthomasletts/assume-cli/refs/heads/main/docs/_static/transparent_header.png" 
     alt="assume" 
   />
 </p>

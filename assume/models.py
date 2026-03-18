@@ -14,7 +14,7 @@ from pydantic import BaseModel, ConfigDict, model_validator
 
 from .exceptions import AssumeValidationError
 
-actions = Literal["add", "credentials", "kill", "list", "remove", "whoami"]
+actions = Literal["add", "credentials", "list", "remove", "whoami"]
 
 
 class _BaseModel(BaseModel):

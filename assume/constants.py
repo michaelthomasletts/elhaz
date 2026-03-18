@@ -19,11 +19,15 @@ class Constants:
     socket_path : Path
         The path to the Unix socket for daemon communication. Default is
         /tmp/assume.sock.
+    max_unix_socket_connections : int
+        The maximum number of pending Unix socket connections the daemon will
+        allow in its listen backlog. Default is 5.
     """
 
     _config_dir: Path = Path.home() / ".assume/configs"
     _config_file_extension: str = ".yaml"
     _socket_path: Path = Path("/tmp/assume.sock")
+    _max_unix_socket_connections: int = 5
 
     @property
     def config_dir(self) -> Path:
@@ -60,3 +64,16 @@ class Constants:
         if not value or not isinstance(value, Path):
             raise AssumeValidationError(f"Invalid socket path: '{value}'")
         self._socket_path = value
+
+    @property
+    def max_unix_socket_connections(self) -> int:
+        return self._max_unix_socket_connections
+
+    @max_unix_socket_connections.setter
+    def max_unix_socket_connections(self, value: int) -> None:
+        if not isinstance(value, int) or value < 1:
+            raise AssumeValidationError(
+                "Invalid max Unix socket connections: "
+                f"'{value}'"
+            )
+        self._max_unix_socket_connections = value

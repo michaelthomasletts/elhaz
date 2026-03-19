@@ -3,18 +3,20 @@
 __all__ = [
     "AssumeRoleModel",
     "ConfigModel",
+    "ErrorModel",
     "MFAModel",
+    "RequestModel",
+    "ResponseModel",
     "SessionModel",
     "STSModel",
 ]
 
-from typing import Literal, Optional
+from typing import Any, Dict, Literal, Optional
+from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict
 
-from .exceptions import AssumeValidationError
-
-actions = Literal["add", "credentials", "list", "remove", "whoami"]
+actions = Literal["add", "credentials", "kill", "list", "remove", "whoami"]
 
 
 class _BaseModel(BaseModel):
@@ -93,16 +95,63 @@ class ConfigModel(_BaseModel):
     Session: Optional[SessionModel] = None
 
 
+class ErrorModel(_BaseModel):
+    """Model for structured daemon error responses.
+
+    Attributes
+    ----------
+    code : int
+        Numeric error code (HTTP-like: 400, 404, 409, 500).
+    message : str
+        Human-readable description of the error.
+    """
+
+    code: int
+    message: str
+
+
 class RequestModel(_BaseModel):
-    """Model for requests sent to the daemon."""
+    """Model for requests sent to the daemon.
 
+    Attributes
+    ----------
+    version : int
+        Protocol version. Defaults to 1.
+    request_id : UUID
+        Client-generated unique identifier echoed back in the response.
+    action : str
+        The daemon action to invoke.
+    payload : dict[str, Any]
+        Action-specific fields. Defaults to an empty dict.
+    """
+
+    version: int = 1
+    request_id: UUID
     action: actions
-    config: Optional[str] = None
+    payload: Dict[str, Any] = {}
 
-    @model_validator(mode="after")
-    def validate_config_requirement(self):
-        if self.action not in ("kill", "list") and self.config is None:
-            raise AssumeValidationError(
-                f"'config' is required for action '{self.action}'"
-            )
-        return self
+
+class ResponseModel(_BaseModel):
+    """Model for responses sent by the daemon.
+
+    Either ``data`` or ``error`` is populated, never both.
+
+    Attributes
+    ----------
+    version : int
+        Protocol version. Defaults to 1.
+    request_id : UUID
+        Echoed from the originating request.
+    ok : bool
+        True on success, False on error.
+    data : Any, optional
+        Action-specific result payload. Present when ``ok`` is True.
+    error : ErrorModel, optional
+        Structured error detail. Present when ``ok`` is False.
+    """
+
+    version: int = 1
+    request_id: UUID
+    ok: bool
+    data: Any = None
+    error: Optional[ErrorModel] = None

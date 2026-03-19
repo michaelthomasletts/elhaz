@@ -73,7 +73,6 @@ class Constants:
     def max_unix_socket_connections(self, value: int) -> None:
         if not isinstance(value, int) or value < 1:
             raise AssumeValidationError(
-                "Invalid max Unix socket connections: "
-                f"'{value}'"
+                f"Invalid max Unix socket connections: '{value}'"
             )
         self._max_unix_socket_connections = value

@@ -1,203 +1,590 @@
-import json
+"""UNIX socket daemon for managing refreshable AWS sessions."""
+
+__all__ = ["Client", "DaemonService", "Server"]
+
+import logging
 import os
 import socket
-from typing import Any, BinaryIO, Dict
+import threading
+from typing import Any, Dict
+from uuid import uuid4
 
 from .constants import Constants
-from .exceptions import AssumeDaemonError, AssumeValidationError
-from .models import RequestModel
+from .exceptions import (
+    AssumeAlreadyExistsError,
+    AssumeBadRequestError,
+    AssumeDaemonError,
+    AssumeNotFoundError,
+    BaseAssumeError,
+)
+from .models import ErrorModel, RequestModel, ResponseModel
 from .session import Session, SessionCache
 
+logger = logging.getLogger(__name__)
 
-class Client:
-    def __init__(self, constants: Constants) -> None:
-        self.constants = constants
-        self.client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        self.client.connect(str(self.constants.socket_path))
-        self.client_file = self.client.makefile("rwb")
-
-    def send(self, request: Dict[str, str]) -> str:
-        self._send_message(self.client_file, request)
-        response: bytes = self.client_file.readline()
-        if not response:
-            raise AssumeDaemonError(
-                "Daemon closed the connection without sending a response."
-            )
-        return response.decode("utf-8").rstrip("\n")
-
-    @staticmethod
-    def _send_message(connection_file: BinaryIO, payload: Any) -> None:
-        connection_file.write(json.dumps(payload).encode("utf-8") + b"\n")
-        connection_file.flush()
-
-    def close(self) -> None:
-        self.client_file.close()
-        self.client.close()
+_ERROR_CODES: Dict[type[BaseAssumeError], int] = {
+    AssumeBadRequestError: 400,
+    AssumeNotFoundError: 404,
+    AssumeAlreadyExistsError: 409,
+}
 
 
-class Server:
-    def __init__(self, constants: Constants, **kwargs) -> None:
-        self.constants = constants
-        self.max_unix_socket_connections = kwargs.pop(
-            "max_unix_socket_connections",
-            self.constants.max_unix_socket_connections,
-        )
-        if (
-            not isinstance(self.max_unix_socket_connections, int)
-            or self.max_unix_socket_connections < 1
-        ):
-            raise AssumeValidationError(
-                "Invalid max Unix socket connections: "
-                f"'{self.max_unix_socket_connections}'"
-            )
-        self.cache = SessionCache(**kwargs)
-        self._running = False
+def _error_code(exc: BaseAssumeError) -> int:
+    """Return the integer error code for a BaseAssumeError subtype.
 
-        # remove the socket file if it already exists
-        try:
-            os.unlink(self.constants.socket_path)
-        except OSError:
-            if os.path.exists(self.constants.socket_path):
-                raise AssumeDaemonError(
-                    "Could not remove existing socket file: "
-                    f"{self.constants.socket_path}"
-                )
+    Parameters
+    ----------
+    exc : BaseAssumeError
+        The exception to map.
 
-        # create the socket and listen for connections
-        self.server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        self.server.bind(str(self.constants.socket_path))
-        self.server.settimeout(0.5)
-        self.server.listen(self.max_unix_socket_connections)
+    Returns
+    -------
+    int
+        400, 404, 409, or 500.
+    """
+    return _ERROR_CODES.get(type(exc), 500)
+
+
+class DaemonService:
+    """Business logic layer for the assume daemon.
+
+    Owns the :class:`~assume.session.SessionCache` and implements all
+    protocol actions. Has no awareness of socket transport.
+
+    Parameters
+    ----------
+    max_size : int or None, optional
+        Maximum number of sessions to retain in the cache. Forwarded
+        to :class:`~assume.session.SessionCache`. Defaults to 10.
+    """
+
+    def __init__(self, max_size: int | None = None) -> None:
+        self._cache: SessionCache = SessionCache(max_size=max_size)
+        self._lock: threading.RLock = threading.RLock()
 
     def add(self, config: str) -> Dict[str, str]:
-        try:
-            self.cache[config] = Session(config)
-            return {"action": "add", "config": config}
-        except Exception as e:
-            raise AssumeDaemonError(
-                f"Failed to add session for config: '{config}'"
-            ) from e
+        """Initialize and cache a new session for a named config.
 
-    def credentials(self, config: str) -> bytes:
-        if (session := self.cache.get(config)) is None:
-            raise AssumeDaemonError(
-                f"No session found for any config named '{config}'. "
-                "You may need to initialize the session for that config first."
-            )
+        Parameters
+        ----------
+        config : str
+            The config name to load and cache.
 
-        return json.dumps(session.session.credentials).encode("utf-8")
+        Returns
+        -------
+        Dict[str, str]
+            Confirmation payload containing the config name.
+        """
+        with self._lock:
+            self._cache[config] = Session(config)
+            return {"config": config}
 
-    @staticmethod
-    def _send_message(connection_file: BinaryIO, payload: Any) -> None:
-        connection_file.write(json.dumps(payload).encode("utf-8") + b"\n")
-        connection_file.flush()
+    def credentials(self, config: str) -> Dict[str, Any]:
+        """Return the current temporary credentials for a cached session.
 
-    def kill(self) -> None:
-        self._running = False
+        Parameters
+        ----------
+        config : str
+            The config name whose credentials to retrieve.
 
-        try:
-            self.server.close()
-        except OSError:
-            ...
+        Returns
+        -------
+        Dict[str, Any]
+            The current AWS temporary credentials.
 
-        try:
-            os.unlink(self.constants.socket_path)
-        except FileNotFoundError:
-            ...
+        Raises
+        ------
+        AssumeNotFoundError
+            If no active session exists for the given config.
+        """
+        with self._lock:
+            session = self._cache.get(config)
+            if session is None:
+                raise AssumeNotFoundError(
+                    f"No active session for config '{config}'. "
+                    "Initialize it first with 'add'."
+                )
+            return dict(session.session.credentials)
 
     def list(self) -> list[str]:
-        try:
-            return list(self.cache.keys())
-        except Exception as e:
-            raise AssumeDaemonError("Failed to list sessions") from e
+        """Return the names of all cached sessions.
+
+        Returns
+        -------
+        list[str]
+            Session names in recency order.
+        """
+        with self._lock:
+            return list(self._cache.keys())
 
     def remove(self, config: str) -> Dict[str, str]:
-        try:
-            del self.cache[config]
-            return {"action": "remove", "config": config}
-        except Exception as e:
-            raise AssumeDaemonError(
-                f"Failed to remove session for config: '{config}'"
-            ) from e
+        """Remove a cached session by config name.
 
-    def _dispatch(self, request: Dict[str, str]) -> Any:
-        match action := request.pop("action"):
+        Parameters
+        ----------
+        config : str
+            The config name to remove from the cache.
+
+        Returns
+        -------
+        Dict[str, str]
+            Confirmation payload containing the config name.
+
+        Raises
+        ------
+        AssumeNotFoundError
+            If no session for the given config is cached.
+        """
+        with self._lock:
+            del self._cache[config]
+            return {"config": config}
+
+    def whoami(self, config: str) -> Dict[str, Any]:
+        """Return the caller identity for a cached session.
+
+        Parameters
+        ----------
+        config : str
+            The config name whose caller identity to retrieve.
+
+        Returns
+        -------
+        Dict[str, Any]
+            The AWS STS caller identity (Account, Arn, UserId).
+
+        Raises
+        ------
+        AssumeNotFoundError
+            If no active session exists for the given config.
+        """
+        with self._lock:
+            session = self._cache.get(config)
+            if session is None:
+                raise AssumeNotFoundError(
+                    f"No active session for config '{config}'. "
+                    "Initialize it first with 'add'."
+                )
+            result: Dict[str, Any] = session.session.client(
+                "sts"
+            ).get_caller_identity()
+            result.pop("ResponseMetadata", None)
+            return result
+
+    def dispatch(self, request: RequestModel) -> Any:
+        """Route a validated request to the appropriate handler.
+
+        Parameters
+        ----------
+        request : RequestModel
+            The incoming protocol request.
+
+        Returns
+        -------
+        Any
+            The handler's return value, used as the response ``data``
+            field.
+
+        Raises
+        ------
+        AssumeBadRequestError
+            If a required payload field is missing or the action is
+            unknown.
+        AssumeNotFoundError
+            If the requested session does not exist.
+        """
+        payload = request.payload
+
+        def _cfg() -> str:
+            try:
+                return payload["config"]
+            except KeyError:
+                raise AssumeBadRequestError(
+                    f"Action '{request.action}' requires"
+                    " payload field 'config'."
+                )
+
+        match request.action:
             case "add":
-                return self.add(**request)
+                return self.add(_cfg())
             case "credentials":
-                return json.loads(self.credentials(**request).decode("utf-8"))
+                return self.credentials(_cfg())
             case "list":
                 return self.list()
             case "remove":
-                return self.remove(**request)
+                return self.remove(_cfg())
             case "whoami":
-                return json.loads(self.whoami(**request).decode("utf-8"))
+                return self.whoami(_cfg())
             case _:
-                raise AssumeDaemonError(f"Unknown action: '{action}'")
+                raise AssumeBadRequestError(
+                    f"Unknown action: '{request.action}'"
+                )
 
-    def _handle_client(self, connection: socket.socket) -> None:
-        with connection:
-            connection_file = connection.makefile("rwb")
-            with connection_file:
-                while self._running:
-                    response: bytes = connection_file.readline()
 
-                    if not response:
-                        break
+class Server:
+    """UNIX socket server that accepts connections and dispatches to
+    :class:`DaemonService`.
 
-                    _response: str = response.decode("utf-8").rstrip("\n")
+    Each connection is serviced in its own thread with one request per
+    connection. The server socket is bound and listening after
+    ``__init__`` returns; call :meth:`run` to start accepting.
 
-                    try:
-                        request: Dict[str, str] = RequestModel.model_validate(
-                            json.loads(_response)
-                        ).model_dump(exclude_none=True)
-                    except Exception:
-                        self._send_message(
-                            connection_file,
-                            {
-                                "ok": False,
-                                "error": f"Invalid request: {_response}",
-                            },
-                        )
-                        continue
+    Parameters
+    ----------
+    constants : Constants
+        Configuration including the socket path and connection backlog.
+    service : DaemonService
+        The business logic handler to delegate requests to.
 
-                    try:
-                        data = self._dispatch(request)
-                    except Exception as e:
-                        self._send_message(
-                            connection_file,
-                            {"ok": False, "error": str(e)},
-                        )
-                        continue
+    Raises
+    ------
+    OSError
+        If a stale socket file exists and cannot be removed.
+    """
 
-                    self._send_message(
-                        connection_file,
-                        {"ok": True, "data": data},
-                    )
+    def __init__(
+        self,
+        constants: Constants,
+        service: DaemonService,
+    ) -> None:
+        self._constants = constants
+        self._service = service
+        self._state_lock = threading.Lock()
+        self._client_threads: set[threading.Thread] = set()
+        self._connections: set[socket.socket] = set()
+        self._running = threading.Event()
+
+        self._prepare_socket_path()
+
+        self._sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self._sock.bind(str(self._constants.socket_path))
+        self._sock.settimeout(0.5)
+        self._sock.listen(self._constants.max_unix_socket_connections)
+        logger.info("Listening on %s", self._constants.socket_path)
+
+    def _prepare_socket_path(self) -> None:
+        """Validate and clear the socket path before binding.
+
+        A few cases are handled explicitly:
+
+        - Path does not exist: nothing to do.
+        - Path exists but is not a socket: raises :class:`AssumeDaemonError`.
+        - Path is a socket and a listener responds: raises
+          :class:`AssumeDaemonError` (another daemon is running).
+        - Path is a socket with no listener (``ConnectionRefusedError``) or
+          one that vanished during the probe (``FileNotFoundError``): treated
+          as a stale socket and removed or ignored respectively.
+        - Any other ``OSError`` from the probe: raised as
+          :class:`AssumeDaemonError` rather than unlinking blindly.
+
+        Raises
+        ------
+        AssumeDaemonError
+            If a live daemon occupies the path, the path is a non-socket
+            file, or probing the socket yields an unexpected OS error.
+        """
+        path = self._constants.socket_path
+
+        if not path.exists():
+            return
+
+        if not path.is_socket():
+            raise AssumeDaemonError(
+                f"Socket path {path!r} is occupied by a non-socket file."
+            )
+
+        probe = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+
+        try:
+            probe.connect(str(path))
+        except ConnectionRefusedError:
+            pass  # no listener — stale socket, fall through to unlink
+        except FileNotFoundError:
+            return  # vanished between exists() and connect() — nothing to do
+        except OSError as exc:
+            raise AssumeDaemonError(
+                f"Could not probe socket at {path!r}: {exc}"
+            ) from exc
+        else:
+            raise AssumeDaemonError(
+                f"A daemon is already running at {path!r}."
+            )
+        finally:
+            probe.close()
+
+        os.unlink(path)
+
+    @staticmethod
+    def _send(conn_file: Any, response: ResponseModel) -> None:
+        conn_file.write(
+            response.model_dump_json(exclude_none=True).encode("utf-8") + b"\n"
+        )
+        conn_file.flush()
+
+    def _build_error_response(
+        self,
+        request_id: Any,
+        exc: BaseAssumeError,
+    ) -> ResponseModel:
+        return ResponseModel(
+            request_id=request_id,
+            ok=False,
+            error=ErrorModel(
+                code=_error_code(exc),
+                message=str(exc),
+            ),
+        )
+
+    def _serve_one(self, conn_file: Any) -> bool:
+        """Read one request from ``conn_file`` and write one response.
+
+        Returns
+        -------
+        bool
+            True if the ``kill`` action was processed, False otherwise.
+        """
+        try:
+            raw = conn_file.readline()
+        except OSError:
+            return False
+
+        if not raw:
+            return False
+
+        # parse the request envelope. generate a fresh request_id for
+        # parse errors since no valid ID is available from the client.
+        try:
+            request = RequestModel.model_validate_json(raw.rstrip())
+        except Exception as exc:
+            response = ResponseModel(
+                request_id=uuid4(),
+                ok=False,
+                error=ErrorModel(
+                    code=400,
+                    message=f"Invalid request: {exc}",
+                ),
+            )
+            try:
+                self._send(conn_file, response)
+            except OSError:
+                pass
+            return False
+
+        # kill is a transport-layer concern: signal the server to stop
+        # after flushing the acknowledgement. DaemonService never sees it.
+        if request.action == "kill":
+            try:
+                self._send(
+                    conn_file,
+                    ResponseModel(
+                        request_id=request.request_id,
+                        ok=True,
+                    ),
+                )
+            except OSError:
+                pass
+            return True
+
+        try:
+            data = self._service.dispatch(request)
+        except BaseAssumeError as exc:
+            response = self._build_error_response(request.request_id, exc)
+        except Exception as exc:
+            logger.exception(
+                "Unexpected error dispatching action '%s'",
+                request.action,
+            )
+            response = ResponseModel(
+                request_id=request.request_id,
+                ok=False,
+                error=ErrorModel(code=500, message=str(exc)),
+            )
+        else:
+            response = ResponseModel(
+                request_id=request.request_id,
+                ok=True,
+                data=data,
+            )
+
+        try:
+            self._send(conn_file, response)
+        except OSError:
+            pass
+        return False
+
+    def _handle_client(self, conn: socket.socket) -> None:
+        with self._state_lock:
+            self._connections.add(conn)
+
+        kill_requested = False
+        try:
+            with conn:
+                conn_file = conn.makefile("rwb")
+                with conn_file:
+                    kill_requested = self._serve_one(conn_file)
+        except Exception:
+            logger.exception("Unhandled error in client thread")
+        finally:
+            with self._state_lock:
+                self._connections.discard(conn)
+                self._client_threads.discard(threading.current_thread())
+
+        if kill_requested:
+            self.stop()
+
+    def _join_client_threads(self) -> None:
+        with self._state_lock:
+            threads = list(self._client_threads)
+        for thread in threads:
+            thread.join()
 
     def run(self) -> None:
-        self._running = True
+        """Start the accept loop. Blocks until :meth:`stop` is called.
+
+        Calls :meth:`stop` and joins all client threads on exit,
+        regardless of how the loop exits.
+        """
+        self._running.set()
         try:
-            while self._running:
+            while self._running.is_set():
                 try:
-                    connection, _ = self.server.accept()
+                    conn, _ = self._sock.accept()
                 except socket.timeout:
                     continue
                 except OSError:
-                    if self._running:
+                    if self._running.is_set():
                         raise
                     break
 
-                self._handle_client(connection)
+                thread = threading.Thread(
+                    target=self._handle_client,
+                    args=(conn,),
+                    daemon=True,
+                )
+                with self._state_lock:
+                    self._client_threads.add(thread)
+                thread.start()
         finally:
-            self.kill()
+            self.stop()
+            self._join_client_threads()
 
-    def whoami(self, config: str) -> bytes:
-        if (session := self.cache.get(config)) is None:
+    def stop(self) -> None:
+        """Signal the server to stop and clean up resources.
+
+        Sets the running flag, closes the server socket, shuts down
+        active client connections, and removes the socket file.
+        Returns immediately; :meth:`run` joins client threads on exit.
+        Safe to call multiple times.
+        """
+        self._running.clear()
+
+        try:
+            self._sock.close()
+        except OSError:
+            pass
+
+        with self._state_lock:
+            connections = list(self._connections)
+
+        for conn in connections:
+            try:
+                conn.shutdown(socket.SHUT_RDWR)
+            except OSError:
+                pass
+            try:
+                conn.close()
+            except OSError:
+                pass
+
+        try:
+            os.unlink(self._constants.socket_path)
+        except FileNotFoundError:
+            pass
+
+
+class Client:
+    """Short-lived UNIX socket client for sending one request to the
+    daemon.
+
+    Intended to be used as a context manager. One :class:`Client`
+    instance sends one request then should be closed.
+
+    Parameters
+    ----------
+    constants : Constants
+        Configuration including the daemon socket path.
+
+    Raises
+    ------
+    AssumeDaemonError
+        If the connection cannot be established.
+    """
+
+    def __init__(self, constants: Constants) -> None:
+        self._sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        try:
+            self._sock.connect(str(constants.socket_path))
+        except OSError as exc:
+            self._sock.close()
             raise AssumeDaemonError(
-                f"No session found for any config named '{config}'. "
-                "You may need to initialize the session for that config first."
-            )
+                f"Could not connect to daemon at"
+                f" {constants.socket_path!r}: {exc}"
+            ) from exc
+        self._conn_file = self._sock.makefile("rwb")
 
-        sts_client = session.session.client("sts")
-        return json.dumps(sts_client.get_caller_identity()).encode("utf-8")
+    def send(
+        self,
+        action: str,
+        payload: Dict[str, Any] | None = None,
+    ) -> ResponseModel:
+        """Send one request and return the parsed response.
+
+        Parameters
+        ----------
+        action : str
+            The daemon action to invoke.
+        payload : Dict[str, Any] or None, optional
+            Action-specific fields. Defaults to an empty dict.
+
+        Returns
+        -------
+        ResponseModel
+            The daemon's response envelope.
+
+        Raises
+        ------
+        AssumeDaemonError
+            If the daemon closes the connection without responding.
+        """
+        request = RequestModel(
+            request_id=uuid4(),
+            action=action,  # type: ignore[assignment]
+            payload=payload or {},
+        )
+        self._conn_file.write(
+            request.model_dump_json().encode("utf-8") + b"\n"
+        )
+        self._conn_file.flush()
+
+        raw = self._conn_file.readline()
+        if not raw:
+            raise AssumeDaemonError(
+                "Daemon closed the connection without a response."
+            )
+        return ResponseModel.model_validate_json(raw.rstrip())
+
+    def close(self) -> None:
+        """Close the underlying socket connection."""
+        try:
+            self._conn_file.close()
+        except OSError:
+            pass
+        try:
+            self._sock.close()
+        except OSError:
+            pass
+
+    def __enter__(self) -> "Client":
+        return self
+
+    def __exit__(self, *_: Any) -> None:
+        self.close()

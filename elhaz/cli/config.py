@@ -10,11 +10,11 @@ from typing import Optional
 
 import typer
 
-from assume.config import Config
-from assume.exceptions import (
-    AssumeAlreadyExistsError,
-    AssumeNotFoundError,
-    AssumeValidationError,
+from elhaz.config import Config
+from elhaz.exceptions import (
+    ElhazAlreadyExistsError,
+    ElhazNotFoundError,
+    ElhazValidationError,
 )
 
 from .output import print_error, print_json, print_success
@@ -29,7 +29,7 @@ from .state import state
 
 app = typer.Typer(
     name="config",
-    help="Manage assume configurations.",
+    help="Manage elhaz configurations.",
     no_args_is_help=True,
 )
 
@@ -107,7 +107,7 @@ def _build_config_interactively(
     Returns
     -------
     dict
-        Config payload ready to pass to :meth:`~assume.config.Config.add`.
+        Config payload ready to pass to :meth:`~elhaz.config.Config.add`.
     """
 
     existing = existing or {}
@@ -195,10 +195,10 @@ def config_add(
         try:
             cfg.add(payload)
             print_success(f"Config '{name}' created.")
-        except AssumeAlreadyExistsError as exc:
+        except ElhazAlreadyExistsError as exc:
             print_error(str(exc))
             raise typer.Exit(1)
-        except AssumeValidationError as exc:
+        except ElhazValidationError as exc:
             print_error(str(exc))
             raise typer.Exit(1)
     else:
@@ -234,7 +234,7 @@ def config_get(
         names = list_local_configs(constants)
         if not names:
             typer.secho(
-                "No configs found. Run 'assume config add' first.",
+                "No configs found. Run 'elhaz config add' first.",
                 fg=typer.colors.YELLOW,
                 err=True,
             )
@@ -254,10 +254,10 @@ def config_get(
 
     try:
         print_json(cfg.get())
-    except AssumeNotFoundError as exc:
+    except ElhazNotFoundError as exc:
         print_error(str(exc))
         raise typer.Exit(1)
-    except AssumeValidationError as exc:
+    except ElhazValidationError as exc:
         print_error(str(exc))
         raise typer.Exit(1)
 
@@ -276,10 +276,10 @@ def config_update(
 
     try:
         existing = cfg.get()
-    except AssumeNotFoundError:
+    except ElhazNotFoundError:
         print_error(f"Config '{name}' not found.")
         raise typer.Exit(1)
-    except AssumeValidationError as exc:
+    except ElhazValidationError as exc:
         print_error(str(exc))
         raise typer.Exit(1)
 
@@ -289,7 +289,7 @@ def config_update(
             cfg.delete()
             cfg.add(payload)
             print_success(f"Config '{name}' updated.")
-        except AssumeValidationError as exc:
+        except ElhazValidationError as exc:
             print_error(str(exc))
             raise typer.Exit(1)
     else:

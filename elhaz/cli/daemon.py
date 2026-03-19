@@ -14,13 +14,13 @@ from typing import Optional
 
 import typer
 
-from assume.daemon import (
+from elhaz.daemon import (
     Client,
     DaemonService,
     Server,
     configure_daemon_logging,
 )
-from assume.exceptions import AssumeDaemonError
+from elhaz.exceptions import ElhazDaemonError
 
 from .output import print_error, print_success
 from .prompts import resolve_name
@@ -28,7 +28,7 @@ from .state import state
 
 app = typer.Typer(
     name="daemon",
-    help="Manage the assume daemon.",
+    help="Manage the elhaz daemon.",
     no_args_is_help=True,
 )
 
@@ -40,7 +40,7 @@ def _is_running() -> bool:
         with Client(state.constants) as c:
             c.send("list")
         return True
-    except AssumeDaemonError:
+    except ElhazDaemonError:
         return False
 
 
@@ -89,7 +89,7 @@ def _wait_until_stopped(timeout: float = 5.0) -> bool:
 
 
 def _daemon_subprocess_cmd() -> list[str]:
-    """Build the ``assume daemon _serve`` subprocess command.
+    """Build the ``elhaz daemon _serve`` subprocess command.
 
     Forwards all current Constants values so the daemon process uses
     the same configuration as the CLI invocation.
@@ -104,7 +104,7 @@ def _daemon_subprocess_cmd() -> list[str]:
     return [
         sys.executable,
         "-m",
-        "assume.cli",
+        "elhaz.cli",
         "--socket-path",
         str(c.socket_path),
         "--logging-path",
@@ -160,7 +160,7 @@ def daemon_stop() -> None:
     try:
         with Client(state.constants) as client:
             response = client.send("kill")
-    except AssumeDaemonError as exc:
+    except ElhazDaemonError as exc:
         print_error(str(exc))
         raise typer.Exit(1)
 
@@ -229,7 +229,7 @@ def daemon_list() -> None:
     try:
         with Client(state.constants) as client:
             response = client.send("list")
-    except AssumeDaemonError as exc:
+    except ElhazDaemonError as exc:
         print_error(f"Daemon unreachable: {exc}")
         raise typer.Exit(1)
 
@@ -261,7 +261,7 @@ def daemon_add(
     try:
         with Client(constants) as client:
             response = client.send("add", {"config": name})
-    except AssumeDaemonError as exc:
+    except ElhazDaemonError as exc:
         print_error(f"Daemon unreachable: {exc}")
         raise typer.Exit(1)
 
@@ -293,7 +293,7 @@ def daemon_remove(
     try:
         with Client(constants) as client:
             response = client.send("remove", {"config": name})
-    except AssumeDaemonError as exc:
+    except ElhazDaemonError as exc:
         print_error(f"Daemon unreachable: {exc}")
         raise typer.Exit(1)
 

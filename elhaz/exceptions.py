@@ -3,19 +3,19 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 __all__ = [
-    "AssumeAlreadyExistsError",
-    "AssumeBadRequestError",
-    "AssumeDaemonError",
-    "AssumeNotFoundError",
-    "AssumeValidationError",
-    "BaseAssumeError",
+    "BaseElhazError",
+    "ElhazAlreadyExistsError",
+    "ElhazBadRequestError",
+    "ElhazDaemonError",
+    "ElhazNotFoundError",
+    "ElhazValidationError",
 ]
 
 from typing import Any, Dict
 
 
-class BaseAssumeError(Exception):
-    """The base exception for assume-cli."""
+class BaseElhazError(Exception):
+    """The base exception for elhaz."""
 
     def __init__(
         self,
@@ -69,21 +69,30 @@ class BaseAssumeError(Exception):
         return f"{self.__class__.__name__}({', '.join(args)})"
 
 
-class AssumeNotFoundError(BaseAssumeError):
+class ElhazNotFoundError(BaseElhazError):
     """Raised when a requested object is not found."""
 
 
-class AssumeAlreadyExistsError(BaseAssumeError):
+class ElhazAlreadyExistsError(BaseElhazError):
     """Raised when an object already exists."""
 
 
-class AssumeBadRequestError(BaseAssumeError):
+class ElhazBadRequestError(BaseElhazError):
     """Raised when a request is invalid."""
 
 
-class AssumeValidationError(BaseAssumeError):
+class ElhazValidationError(BaseElhazError):
     """Raised when validation of input data fails."""
 
 
-class AssumeDaemonError(BaseAssumeError):
-    """Raised when there is an error in the assume daemon."""
+class ElhazDaemonError(BaseElhazError):
+    """Raised when there is an error in the elhaz daemon."""
+
+
+# Backward-compatible aliases for the former project name.
+BaseAssumeError = BaseElhazError
+AssumeNotFoundError = ElhazNotFoundError
+AssumeAlreadyExistsError = ElhazAlreadyExistsError
+AssumeBadRequestError = ElhazBadRequestError
+AssumeValidationError = ElhazValidationError
+AssumeDaemonError = ElhazDaemonError

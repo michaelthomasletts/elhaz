@@ -1,5 +1,5 @@
 [project]
-name = "assume-cli"
+name = "elhaz"
 version = "0.1.0"
 description = "A CLI and daemon for managing temporary AWS credentials via STS using boto3-refresh-session, exposing automatically refreshed credentials to shells, SDKs, tools, and more."
 readme = "README.md"
@@ -28,11 +28,11 @@ keywords = [
 ]
 
 [project.urls]
-Issues = "https://github.com/michaelthomasletts/assume-cli/issues"
-Repository = "https://github.com/michaelthomasletts/assume-cli"
+Issues = "https://github.com/michaelthomasletts/elhaz/issues"
+Repository = "https://github.com/michaelthomasletts/elhaz"
 
 [project.scripts]
-assume = "assume.cli.__main__:main"
+elhaz = "elhaz.cli.__main__:main"
 
 [dependency-groups]
 dev = [
@@ -54,7 +54,7 @@ build-backend = "hatchling.build"
 include = ["LICENSE", "NOTICE", "boto3_client_cache/**"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["assume"]
+packages = ["elhaz"]
 
 [tool.ruff]
 line-length = 79

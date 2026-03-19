@@ -13,7 +13,7 @@ from typing import Any, Iterator, Tuple
 from boto3_refresh_session import STSRefreshableSession
 
 from .config import Config
-from .exceptions import AssumeNotFoundError, AssumeValidationError
+from .exceptions import ElhazNotFoundError, ElhazValidationError
 
 
 class Session:
@@ -72,7 +72,7 @@ class Session:
     def name(self, _: str) -> None:
         """Reject direct session name changes."""
 
-        raise AssumeValidationError(
+        raise ElhazValidationError(
             "Session name cannot be changed after creation."
         )
 
@@ -86,7 +86,7 @@ class Session:
     def created_at(self, _: datetime) -> None:
         """Reject direct creation timestamp changes."""
 
-        raise AssumeValidationError(
+        raise ElhazValidationError(
             "Session creation time cannot be changed after creation."
         )
 
@@ -101,7 +101,7 @@ class Session:
     def expires_at(self, _: datetime) -> None:
         """Reject direct expiration timestamp changes."""
 
-        raise AssumeValidationError(
+        raise ElhazValidationError(
             "Session expiration time cannot be changed after creation."
         )
 
@@ -115,7 +115,7 @@ class Session:
     def last_accessed(self, _: datetime) -> None:
         """Reject direct access timestamp changes."""
 
-        raise AssumeValidationError(
+        raise ElhazValidationError(
             "Session last accessed time cannot be changed directly."
         )
 
@@ -184,7 +184,7 @@ class SessionCache:
         """Set cache capacity and evict oldest entries if needed."""
 
         if value == 0:
-            raise AssumeValidationError(
+            raise ElhazValidationError(
                 "Cache max_size must be greater than zero."
             )
 
@@ -207,14 +207,14 @@ class SessionCache:
 
         Raises
         ------
-        AssumeNotFoundError
+        ElhazNotFoundError
             If no session with the specified name exists in the cache.
         """
 
         try:
             del self.cache[name]
         except KeyError as exc:
-            raise AssumeNotFoundError(
+            raise ElhazNotFoundError(
                 f"No session found with name {name!r} to delete."
             ) from exc
 
@@ -233,7 +233,7 @@ class SessionCache:
 
         Raises
         ------
-        AssumeNotFoundError
+        ElhazNotFoundError
             If no session with the specified name exists in the cache.
         """
 
@@ -242,7 +242,7 @@ class SessionCache:
             self.cache.move_to_end(name)
             return session
         except KeyError as exc:
-            raise AssumeNotFoundError(
+            raise ElhazNotFoundError(
                 f"No session found with name {name!r}."
             ) from exc
 
@@ -277,7 +277,7 @@ class SessionCache:
         try:
             assert session.name == name
         except AssertionError as exc:
-            raise AssumeValidationError(
+            raise ElhazValidationError(
                 f"Session name {session.name!r} does not match cache key "
                 f"{name!r}."
             ) from exc
@@ -318,7 +318,7 @@ class SessionCache:
 
         try:
             return self.__getitem__(name)
-        except AssumeNotFoundError:
+        except ElhazNotFoundError:
             return default
 
     def items(self) -> Iterator[Tuple[str, Session]]:
@@ -346,14 +346,14 @@ class SessionCache:
 
         Raises
         ------
-        AssumeNotFoundError
+        ElhazNotFoundError
             If no session with the specified name exists in the cache.
         """
 
         try:
             return self.cache.pop(name)
         except KeyError as exc:
-            raise AssumeNotFoundError(
+            raise ElhazNotFoundError(
                 f"No session found with name {name!r} to pop."
             ) from exc
 
@@ -373,14 +373,14 @@ class SessionCache:
 
         Raises
         ------
-        AssumeNotFoundError
+        ElhazNotFoundError
             If the cache is empty.
         """
 
         try:
             return self.cache.popitem(last=last)
         except KeyError as exc:
-            raise AssumeNotFoundError("No sessions available to pop.") from exc
+            raise ElhazNotFoundError("No sessions available to pop.") from exc
 
     def values(self) -> Iterator[Session]:
         """Return an iterator over sessions in recency order."""

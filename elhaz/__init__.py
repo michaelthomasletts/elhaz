@@ -21,7 +21,7 @@ __all__.extend(models.__all__)
 __all__.extend(session.__all__)
 
 # package metadata
-__title__ = "assume"
+__title__ = "elhaz"
 __author__ = "Mike Letts"
 __maintainer__ = "61418"
 __license__ = "MPL-2.0"

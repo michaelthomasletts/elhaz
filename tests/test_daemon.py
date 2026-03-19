@@ -9,10 +9,10 @@ from pathlib import Path
 
 import pytest
 
-from assume.constants import Constants
-from assume.daemon import Client, DaemonService, Server
-from assume.exceptions import AssumeDaemonError
-from assume.models import ResponseModel
+from elhaz.constants import Constants
+from elhaz.daemon import Client, DaemonService, Server
+from elhaz.exceptions import ElhazDaemonError
+from elhaz.models import ResponseModel
 
 
 class FakeSTSClient:
@@ -42,7 +42,7 @@ class FakeSession:
         self.session = FakeRefreshableSession()
 
 
-def _socket_path(prefix: str = "assume-test") -> Path:
+def _socket_path(prefix: str = "elhaz-test") -> Path:
     return Path("/tmp") / f"{prefix}-{uuid.uuid4().hex}.sock"
 
 
@@ -64,7 +64,7 @@ def constants() -> Constants:
 
 @pytest.fixture()
 def service(monkeypatch) -> DaemonService:
-    monkeypatch.setattr("assume.daemon.Session", FakeSession)
+    monkeypatch.setattr("elhaz.daemon.Session", FakeSession)
     return DaemonService()
 
 
@@ -318,7 +318,7 @@ def test_startup_rejects_live_daemon(constants, service):
     _wait_for_socket(constants.socket_path)
 
     try:
-        with pytest.raises(AssumeDaemonError, match="already running"):
+        with pytest.raises(ElhazDaemonError, match="already running"):
             Server(constants, DaemonService())
     finally:
         server.stop()
@@ -349,15 +349,15 @@ def test_startup_rejects_non_socket_path(constants, service):
     constants.socket_path.write_bytes(b"")
 
     try:
-        with pytest.raises(AssumeDaemonError, match="non-socket"):
+        with pytest.raises(ElhazDaemonError, match="non-socket"):
             Server(constants, service)
     finally:
         constants.socket_path.unlink(missing_ok=True)
 
 
 def test_client_wraps_connection_error(constants):
-    """Client.__init__ must raise AssumeDaemonError when no daemon listens."""
-    with pytest.raises(AssumeDaemonError, match="Could not connect"):
+    """Client.__init__ must raise ElhazDaemonError when no daemon listens."""
+    with pytest.raises(ElhazDaemonError, match="Could not connect"):
         Client(constants)
 
 

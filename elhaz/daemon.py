@@ -18,30 +18,30 @@ from uuid import uuid4
 
 from .constants import Constants
 from .exceptions import (
-    AssumeAlreadyExistsError,
-    AssumeBadRequestError,
-    AssumeDaemonError,
-    AssumeNotFoundError,
-    BaseAssumeError,
+    BaseElhazError,
+    ElhazAlreadyExistsError,
+    ElhazBadRequestError,
+    ElhazDaemonError,
+    ElhazNotFoundError,
 )
 from .models import ErrorModel, RequestModel, ResponseModel
 from .session import Session, SessionCache
 
 logger = logging.getLogger(__name__)
 
-_ERROR_CODES: Dict[type[BaseAssumeError], int] = {
-    AssumeBadRequestError: 400,
-    AssumeNotFoundError: 404,
-    AssumeAlreadyExistsError: 409,
+_ERROR_CODES: Dict[type[BaseElhazError], int] = {
+    ElhazBadRequestError: 400,
+    ElhazNotFoundError: 404,
+    ElhazAlreadyExistsError: 409,
 }
 
 
-def _error_code(exc: BaseAssumeError) -> int:
-    """Return the integer error code for a BaseAssumeError subtype.
+def _error_code(exc: BaseElhazError) -> int:
+    """Return the integer error code for a BaseElhazError subtype.
 
     Parameters
     ----------
-    exc : BaseAssumeError
+    exc : BaseElhazError
         The exception to map.
 
     Returns
@@ -54,12 +54,12 @@ def _error_code(exc: BaseAssumeError) -> int:
 
 
 def configure_daemon_logging(constants: Constants) -> None:
-    """Attach a rotating file handler to the ``assume`` package logger.
+    """Attach a rotating file handler to the ``elhaz`` package logger.
 
     Intended to be called once by the daemon entry point before
     constructing :class:`Server`. Calling it multiple times is safe:
     any existing :class:`~logging.handlers.RotatingFileHandler` on the
-    ``assume`` logger is replaced before the new one is added.
+    ``elhaz`` logger is replaced before the new one is added.
 
     Log records are written to ``constants.daemon_logging_path`` in a
     human-readable format. The parent directory is created if it does
@@ -72,7 +72,7 @@ def configure_daemon_logging(constants: Constants) -> None:
         Daemon configuration; ``daemon_logging_path`` determines the log file.
     """
 
-    pkg_logger = logging.getLogger("assume")
+    pkg_logger = logging.getLogger("elhaz")
 
     # Remove any existing RotatingFileHandler (e.g. from a previous call
     # or a reconfigure).  Leave StreamHandlers and others untouched.
@@ -101,16 +101,16 @@ def configure_daemon_logging(constants: Constants) -> None:
 
 
 class DaemonService:
-    """Business logic layer for the assume daemon.
+    """Business logic layer for the elhaz daemon.
 
-    Owns the :class:`~assume.session.SessionCache` and implements all
+    Owns the :class:`~elhaz.session.SessionCache` and implements all
     protocol actions. Has no awareness of socket transport.
 
     Parameters
     ----------
     max_size : int or None, optional
         Maximum number of sessions to retain in the cache. Forwarded
-        to :class:`~assume.session.SessionCache`. Defaults to 10.
+        to :class:`~elhaz.session.SessionCache`. Defaults to 10.
     """
 
     def __init__(self, max_size: int | None = None) -> None:
@@ -150,14 +150,14 @@ class DaemonService:
 
         Raises
         ------
-        AssumeNotFoundError
+        ElhazNotFoundError
             If no active session exists for the given config.
         """
 
         with self._lock:
             session = self._cache.get(config)
             if session is None:
-                raise AssumeNotFoundError(
+                raise ElhazNotFoundError(
                     f"No active session for config '{config}'. "
                     "Initialize it first with 'add'."
                 )
@@ -179,10 +179,10 @@ class DaemonService:
 
         Raises
         ------
-        AssumeBadRequestError
+        ElhazBadRequestError
             If a required payload field is missing or the action is
             unknown.
-        AssumeNotFoundError
+        ElhazNotFoundError
             If the requested session does not exist.
         """
 
@@ -192,7 +192,7 @@ class DaemonService:
             try:
                 return payload["config"]
             except KeyError:
-                raise AssumeBadRequestError(
+                raise ElhazBadRequestError(
                     f"Action '{request.action}' requires"
                     " payload field 'config'."
                 )
@@ -209,7 +209,7 @@ class DaemonService:
             case "whoami":
                 return self.whoami(_cfg())
             case _:
-                raise AssumeBadRequestError(
+                raise ElhazBadRequestError(
                     f"Unknown action: '{request.action}'"
                 )
 
@@ -240,7 +240,7 @@ class DaemonService:
 
         Raises
         ------
-        AssumeNotFoundError
+        ElhazNotFoundError
             If no session for the given config is cached.
         """
 
@@ -263,14 +263,14 @@ class DaemonService:
 
         Raises
         ------
-        AssumeNotFoundError
+        ElhazNotFoundError
             If no active session exists for the given config.
         """
 
         with self._lock:
             session = self._cache.get(config)
             if session is None:
-                raise AssumeNotFoundError(
+                raise ElhazNotFoundError(
                     f"No active session for config '{config}'. "
                     "Initialize it first with 'add'."
                 )
@@ -321,7 +321,7 @@ class Server:
         self._prepare_socket_path()
 
         # Ensure the parent directory exists; the default socket path
-        # (~/.assume/sock/) is not guaranteed to be present on first run.
+        # (~/.elhaz/sock/) is not guaranteed to be present on first run.
         self._constants.socket_path.parent.mkdir(parents=True, exist_ok=True)
 
         self._sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -341,18 +341,18 @@ class Server:
         A few cases are handled explicitly:
 
         - Path does not exist: nothing to do.
-        - Path exists but is not a socket: raises :class:`AssumeDaemonError`.
+        - Path exists but is not a socket: raises :class:`ElhazDaemonError`.
         - Path is a socket and a listener responds: raises
-          :class:`AssumeDaemonError` (another daemon is running).
+          :class:`ElhazDaemonError` (another daemon is running).
         - Path is a socket with no listener (``ConnectionRefusedError``) or
           one that vanished during the probe (``FileNotFoundError``): treated
           as a stale socket and removed or ignored respectively.
         - Any other ``OSError`` from the probe: raised as
-          :class:`AssumeDaemonError` rather than unlinking blindly.
+          :class:`ElhazDaemonError` rather than unlinking blindly.
 
         Raises
         ------
-        AssumeDaemonError
+        ElhazDaemonError
             If a live daemon occupies the path, the path is a non-socket
             file, or probing the socket yields an unexpected OS error.
         """
@@ -366,7 +366,7 @@ class Server:
             logger.warning(
                 "Socket path %s is occupied by a non-socket file.", path
             )
-            raise AssumeDaemonError(
+            raise ElhazDaemonError(
                 f"Socket path {path!r} is occupied by a non-socket file."
             )
 
@@ -379,11 +379,11 @@ class Server:
         except FileNotFoundError:
             return  # vanished between exists() and connect() — nothing to do
         except OSError as exc:
-            raise AssumeDaemonError(
+            raise ElhazDaemonError(
                 f"Could not probe socket at {path!r}: {exc}"
             ) from exc
         else:
-            raise AssumeDaemonError(
+            raise ElhazDaemonError(
                 f"A daemon is already running at {path!r}."
             )
         finally:
@@ -402,7 +402,7 @@ class Server:
     def _build_error_response(
         self,
         request_id: Any,
-        exc: BaseAssumeError,
+        exc: BaseElhazError,
     ) -> ResponseModel:
         return ResponseModel(
             request_id=request_id,
@@ -474,7 +474,7 @@ class Server:
 
         try:
             data = self._service.dispatch(request)
-        except BaseAssumeError as exc:
+        except BaseElhazError as exc:
             response = self._build_error_response(request.request_id, exc)
             logger.warning(
                 "Request error %d: action=%s request_id=%s: %s",
@@ -647,7 +647,7 @@ class Client:
 
     Raises
     ------
-    AssumeDaemonError
+    ElhazDaemonError
         If the connection cannot be established.
     """
 
@@ -657,7 +657,7 @@ class Client:
             self._sock.connect(str(constants.socket_path))
         except OSError as exc:
             self._sock.close()
-            raise AssumeDaemonError(
+            raise ElhazDaemonError(
                 f"Could not connect to daemon at"
                 f" {constants.socket_path!r}: {exc}"
             ) from exc
@@ -684,7 +684,7 @@ class Client:
 
         Raises
         ------
-        AssumeDaemonError
+        ElhazDaemonError
             If the daemon closes the connection without responding.
         """
 
@@ -700,7 +700,7 @@ class Client:
 
         raw = self._conn_file.readline()
         if not raw:
-            raise AssumeDaemonError(
+            raise ElhazDaemonError(
                 "Daemon closed the connection without a response."
             )
         return ResponseModel.model_validate_json(raw.rstrip())

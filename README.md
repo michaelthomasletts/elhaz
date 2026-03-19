@@ -1,37 +1,37 @@
 <p align="center">
   <img 
-    src="https://raw.githubusercontent.com/michaelthomasletts/assume-cli/refs/heads/main/docs/_static/transparent_header.png" 
-    alt="assume" 
+    src="https://raw.githubusercontent.com/michaelthomasletts/elhaz/refs/heads/main/docs/_static/transparent_header.png" 
+    alt="elhaz" 
   />
 </p>
 
-**ASSUME IS ACTIVELY UNDER DEVELOPMENT AND NOT YET READY FOR OFFICIAL RELEASE**
+**ELHAZ IS ACTIVELY UNDER DEVELOPMENT AND NOT YET READY FOR OFFICIAL RELEASE**
 
 **ACCORDINGLY, THIS REPOSITORY WILL CHANGE SUBSTANTIALLY UNTIL THE PROJECT REACHES A STABLE STATE AND IS OFFICIALLY RELEASED FOR USE**
 
 ## Description
 
-Think of `assume` as your own local AWS STS.
+Think of `elhaz` as your own local AWS STS.
 
-`assume` is a CLI tool with a daemon for exposing automatically refreshed temporary AWS credentials via [boto3-refresh-session](https://github.com/61418/boto3-refresh-session) to shells, SDKs, tools, and more. assume uses a UNIX domain socket with an in-memory session cache and a simple refresh loop.
+`elhaz` is a CLI tool with a daemon for exposing automatically refreshed temporary AWS credentials via [boto3-refresh-session](https://github.com/61418/boto3-refresh-session) to shells, SDKs, tools, and more. elhaz uses a UNIX domain socket with an in-memory session cache and a simple refresh loop.
 
 ## Installation
 
-For beta testing, install `assume` into a dedicated virtual environment from a local clone of this repository.
+For beta testing, install `elhaz` into a dedicated virtual environment from a local clone of this repository.
 
 ```bash
-git clone https://github.com/michaelthomasletts/assume-cli.git
-cd assume-cli
+git clone https://github.com/michaelthomasletts/elhaz.git
+cd elhaz
 
 uv venv
 source .venv/bin/activate
 uv sync
 ```
 
-`uv sync` installs the project dependencies and installs the `assume` CLI into the active virtual environment, so you can run:
+`uv sync` installs the project dependencies and installs the `elhaz` CLI into the active virtual environment, so you can run:
 
 ```bash
-assume --help
+elhaz --help
 ```
 
 If you need to resync after pulling updates from the beta branch, run:
@@ -45,21 +45,21 @@ uv sync
 Create a config.
 
 ```bash
-assume config add
+elhaz config add
 ```
 
-`assume` will interactively help you create the config. The only required parameter is `RoleArn`. 
+`elhaz` will interactively help you create the config. The only required parameter is `RoleArn`. 
 
 Next, start the daemon.
 
 ```bash
-assume daemon start
+elhaz daemon start
 ```
 
 Initialize the AWS session for your config.
 
 ```bash
-assume daemon add -n <your config name>
+elhaz daemon add -n <your config name>
 ```
 
 Now the fun begins.
@@ -67,44 +67,44 @@ Now the fun begins.
 You can export your automatically refreshed temporary AWS credenitals to stdout.
 
 ```bash
-assume export -n <your config name>
+elhaz export -n <your config name>
 ```
 
 Or export env vars with those credentials:
 
 ```bash
-assume export -n <your config name> -f env
+elhaz export -n <your config name> -f env
 ```
 
 Or execute a one-off AWS command using those credentials.
 
 ```bash
-assume exec -n <your config name> --- aws s3 ls
+elhaz exec -n <your config name> --- aws s3 ls
 ```
 
 Or initialize a shell and run as many AWS commands as you want, for however long you like.
 
 ```bash
-assume shell -n <your config name>
+elhaz shell -n <your config name>
 ```
 
 If you have an existential crisis and forget who you are -- fret not, friend.
 
 ```bash
-assume whoami -n <your config name>
+elhaz whoami -n <your config name>
 ```
 
-You can also pass `assume` to `credential_process` in your AWS profile. So long as the `assume` daemon is running, `credential_process` will receive the credentials from stdout.
+You can also pass `elhaz` to `credential_process` in your AWS profile. So long as the `elhaz` daemon is running, `credential_process` will receive the credentials from stdout.
 
 ```
-credential_process="assume export -n <your config name> -f credential-process"
+credential_process="elhaz export -n <your config name> -f credential-process"
 ```
 
 With the daemon humming quietly in the background, you could also initialize a `Client` from a Python script and interact with the daemon that way _instead of using the CLI_.
 
 ```python
-from assume.constants import Constants
-from assume.daemon import Client
+from elhaz.constants import Constants
+from elhaz.daemon import Client
 
 constants = Constants()
 
@@ -120,17 +120,17 @@ print(response.data)
 ## Commands
 
 ```
-% assume --help
+% elhaz --help
 
- Usage: assume [OPTIONS] COMMAND [ARGS]...                                                                                                                                                                
+ Usage: elhaz [OPTIONS] COMMAND [ARGS]...                                                                                                                                                                
                                                                                                                                                                                                           
  Manage refreshable AWS credentials via a local daemon.                                                                                                                                                   
                                                                                                                                                                                                           
 ╭─ Options ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ --config-dir                   -cd        PATH     Config directory. Default: ~/.assume/configs                                                                                      │
+│ --config-dir                   -cd        PATH     Config directory. Default: ~/.elhaz/configs                                                                                      │
 │ --config-file-extension        -cfe       TEXT     Config file extension. Default: .yaml                                                                                                               │
 │ --socket-path                  -sp        PATH     UNIX socket path for daemon communication.                                                                                                          │
-│ --logging-path                 -lp        PATH     Daemon log file path. Default: ~/.assume/logs/daemon.log                                                                          │
+│ --logging-path                 -lp        PATH     Daemon log file path. Default: ~/.elhaz/logs/daemon.log                                                                          │
 │ --max-unix-socket-connections  -musc      INTEGER  Max pending socket connections.                                                                                                                     │
 │ --install-completion                               Install completion for the current shell.                                                                                                           │
 │ --show-completion                                  Show completion for the current shell, to copy it or customize the installation.                                                                    │
@@ -141,17 +141,17 @@ print(response.data)
 │ exec    Execute a one-off command with AWS credentials as env vars.                                                                                                                                    │
 │ shell   Spawn an interactive shell with auto-refreshed AWS credentials.                                                                                                                                │
 │ whoami  Return the STS caller identity for the specified config.                                                                                                                                       │
-│ config  Manage assume configurations.                                                                                                                                                                  │
-│ daemon  Manage the assume daemon.                                                                                                                                                                      │
+│ config  Manage elhaz configurations.                                                                                                                                                                   │
+│ daemon  Manage the elhaz daemon.                                                                                                                                                                       │
 ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
 
 ```
-% assume config --help
+% elhaz config --help
 
- Usage: assume config [OPTIONS] COMMAND [ARGS]...                                                                                                                                                         
+ Usage: elhaz config [OPTIONS] COMMAND [ARGS]...                                                                                                                                                         
                                                                                                                                                                                                           
- Manage assume configurations.                                                                                                                                                                            
+ Manage elhaz configurations.                                                                                                                                                                            
                                                                                                                                                                                                           
 ╭─ Options ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ --help          Show this message and exit.                                                                                                                                                            │
@@ -166,11 +166,11 @@ print(response.data)
 ```
 
 ```
-% assume daemon --help
+% elhaz daemon --help
 
- Usage: assume daemon [OPTIONS] COMMAND [ARGS]...                                                                                                                                                         
+ Usage: elhaz daemon [OPTIONS] COMMAND [ARGS]...                                                                                                                                                         
                                                                                                                                                                                                           
- Manage the assume daemon.                                                                                                                                                                                
+ Manage the elhaz daemon.                                                                                                                                                                                
                                                                                                                                                                                                           
 ╭─ Options ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ --help          Show this message and exit.                                                                                                                                                            │

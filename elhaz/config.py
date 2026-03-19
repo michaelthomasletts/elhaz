@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-"""Read, validate, and transform persisted assume-cli configs."""
+"""Read, validate, and transform persisted elhaz configs."""
 
 __all__ = ["Config"]
 
@@ -18,9 +18,9 @@ from ruamel.yaml import YAML
 
 from .constants import Constants
 from .exceptions import (
-    AssumeAlreadyExistsError,
-    AssumeNotFoundError,
-    AssumeValidationError,
+    ElhazAlreadyExistsError,
+    ElhazNotFoundError,
+    ElhazValidationError,
 )
 from .models import ConfigModel
 
@@ -98,7 +98,7 @@ class Config:
 
         Raises
         ------
-        AssumeValidationError
+        ElhazValidationError
             If the new name is invalid.
         """
 
@@ -107,7 +107,7 @@ class Config:
             or not isinstance(value, str)
             or not bool(re.compile(r"^[\w\-_]+$").match(value))
         ):
-            raise AssumeValidationError(f"Invalid config name: '{value}'")
+            raise ElhazValidationError(f"Invalid config name: '{value}'")
 
         self._name = value
 
@@ -158,14 +158,14 @@ class Config:
             Default is False.
         exist_ok : bool, optional
             Whether to allow the config file to already exist when locking. If
-            False, an AssumeAlreadyExistsError will be raised if the config
+            False, an ElhazAlreadyExistsError will be raised if the config
             file already exists. Default is False.
 
         Raises
         ------
-        AssumeAlreadyExistsError
+        ElhazAlreadyExistsError
             If exist_ok is False and the config file already exists.
-        AssumeNotFoundError
+        ElhazNotFoundError
             If create is False and the config file does not exist.
 
         Yields
@@ -178,7 +178,7 @@ class Config:
 
         if self.file_path.exists():
             if not exist_ok:
-                raise AssumeAlreadyExistsError(
+                raise ElhazAlreadyExistsError(
                     message=f"Config '{self.name}' already exists",
                     param="name",
                     value=self.name,
@@ -186,7 +186,7 @@ class Config:
         elif create:
             self.file_path.touch()
         else:
-            raise AssumeNotFoundError(
+            raise ElhazNotFoundError(
                 message=f"Config '{self.name}' not found",
                 param="name",
                 value=self.name,
@@ -214,9 +214,9 @@ class Config:
 
         Raises
         ------
-        AssumeAlreadyExistsError
+        ElhazAlreadyExistsError
             If a config with the same name already exists.
-        AssumeValidationError
+        ElhazValidationError
             If the config is invalid.
         """
 
@@ -228,7 +228,7 @@ class Config:
                     ConfigModel(**config).model_dump(exclude_none=True), f
                 )
             except Exception as err:
-                raise AssumeValidationError(f"Invalid config: {err}")
+                raise ElhazValidationError(f"Invalid config: {err}")
 
             f.truncate()
 
@@ -242,9 +242,9 @@ class Config:
 
         Raises
         ------
-        AssumeNotFoundError
+        ElhazNotFoundError
             If the config does not exist.
-        AssumeValidationError
+        ElhazValidationError
             If the config is invalid.
         """
 
@@ -254,7 +254,7 @@ class Config:
                     exclude_none=True
                 )
             except Exception as err:
-                raise AssumeValidationError(f"Invalid config: {err}")
+                raise ElhazValidationError(f"Invalid config: {err}")
 
     def edit(self, param: str, value: Any) -> None:
         """Replace a top-level config field and persist the result.
@@ -272,9 +272,9 @@ class Config:
 
         Raises
         ------
-        AssumeNotFoundError
+        ElhazNotFoundError
             If the config does not exist.
-        AssumeValidationError
+        ElhazValidationError
             If the config is invalid after editing.
         """
 
@@ -285,7 +285,7 @@ class Config:
             try:
                 config = ConfigModel(**config).model_dump(exclude_none=True)
             except Exception as err:
-                raise AssumeValidationError(f"Invalid config: {err}")
+                raise ElhazValidationError(f"Invalid config: {err}")
 
             f.seek(0)
             self.yaml.dump(config, f)
@@ -313,11 +313,11 @@ class Config:
 
         Raises
         ------
-        AssumeAlreadyExistsError
+        ElhazAlreadyExistsError
             If a config with the new name already exists.
-        AssumeNotFoundError
+        ElhazNotFoundError
             If the source config does not exist.
-        AssumeValidationError
+        ElhazValidationError
             If the new name is invalid or the source config is invalid.
         """
 
@@ -348,9 +348,9 @@ class Config:
 
         Raises
         ------
-        AssumeNotFoundError
+        ElhazNotFoundError
             If the config does not exist.
-        AssumeValidationError
+        ElhazValidationError
             If the persisted config is invalid.
         """
 

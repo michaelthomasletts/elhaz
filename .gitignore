@@ -208,6 +208,7 @@ __marimo__/
 
 # Anthropic
 CLAUDE.md
+.claude/
 
 # local
 .DS_Store

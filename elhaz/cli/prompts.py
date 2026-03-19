@@ -10,9 +10,9 @@ from typing import Optional
 import questionary
 import typer
 
-from assume.constants import Constants
-from assume.daemon import Client
-from assume.exceptions import AssumeDaemonError
+from elhaz.constants import Constants
+from elhaz.daemon import Client
+from elhaz.exceptions import ElhazDaemonError
 
 from .output import print_error
 
@@ -59,7 +59,7 @@ def select_local_config(
     names = list_local_configs(constants)
     if not names:
         typer.secho(
-            "No configs found. Run 'assume config add' to create one.",
+            "No configs found. Run 'elhaz config add' to create one.",
             fg=typer.colors.YELLOW,
             err=True,
         )
@@ -92,14 +92,14 @@ def select_daemon_session(
     try:
         with Client(constants) as client:
             response = client.send("list")
-    except AssumeDaemonError as exc:
+    except ElhazDaemonError as exc:
         print_error(f"Daemon unreachable: {exc}")
         raise typer.Exit(1)
 
     sessions: list[str] = response.data or []
     if not sessions:
         typer.secho(
-            "No active sessions. Run 'assume daemon add' first.",
+            "No active sessions. Run 'elhaz daemon add' first.",
             fg=typer.colors.YELLOW,
             err=True,
         )

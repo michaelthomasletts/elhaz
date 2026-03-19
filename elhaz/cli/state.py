@@ -4,7 +4,7 @@
 
 """Module-level CLI state shared across all subcommands."""
 
-from assume.constants import Constants
+from elhaz.constants import Constants
 
 
 class _State:

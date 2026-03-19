@@ -6,7 +6,7 @@ __all__ = ["Constants"]
 
 from pathlib import Path
 
-from assume.exceptions import AssumeValidationError
+from elhaz.exceptions import ElhazValidationError
 
 
 class Constants:
@@ -17,24 +17,24 @@ class Constants:
     ----------
     config_dir : Path
         The directory where config files are stored. Default is
-        ~/.assume/configs.
+        ~/.elhaz/configs.
     config_file_extension : str
         The file extension for config files. Default is .yaml.
     socket_path : Path
         The path to the Unix socket for daemon communication. Default is
-        ~/.assume/sock/assume-daemon.sock.
+        ~/.elhaz/sock/daemon.sock.
     daemon_logging_path : Path
         The path to the log file for the daemon. Default is
-        ~/.assume/logs/daemon.log.
+        ~/.elhaz/logs/daemon.log.
     max_unix_socket_connections : int
         The maximum number of pending Unix socket connections the daemon will
         allow in its listen backlog. Default is 5.
     """
 
-    _config_dir: Path = Path.home() / ".assume/configs"
+    _config_dir: Path = Path.home() / ".elhaz/configs"
     _config_file_extension: str = ".yaml"
-    _socket_path: Path = Path.home() / ".assume" / "sock" / "daemon.sock"
-    _daemon_logging_path: Path = Path.home() / ".assume/logs/daemon.log"
+    _socket_path: Path = Path.home() / ".elhaz" / "sock" / "daemon.sock"
+    _daemon_logging_path: Path = Path.home() / ".elhaz/logs/daemon.log"
     _max_unix_socket_connections: int = 5
 
     @property
@@ -44,7 +44,7 @@ class Constants:
     @config_dir.setter
     def config_dir(self, value: Path) -> None:
         if not value or not isinstance(value, Path):
-            raise AssumeValidationError(f"Invalid config directory: '{value}'")
+            raise ElhazValidationError(f"Invalid config directory: '{value}'")
         self._config_dir = value
 
     @property
@@ -58,7 +58,7 @@ class Constants:
             or not isinstance(value, str)
             or not value.startswith(".")
         ):
-            raise AssumeValidationError(
+            raise ElhazValidationError(
                 f"Invalid config file extension: '{value}'"
             )
         self._config_file_extension = value
@@ -70,7 +70,7 @@ class Constants:
     @socket_path.setter
     def socket_path(self, value: Path) -> None:
         if not value or not isinstance(value, Path):
-            raise AssumeValidationError(f"Invalid socket path: '{value}'")
+            raise ElhazValidationError(f"Invalid socket path: '{value}'")
         self._socket_path = value
 
     @property
@@ -80,7 +80,7 @@ class Constants:
     @max_unix_socket_connections.setter
     def max_unix_socket_connections(self, value: int) -> None:
         if not isinstance(value, int) or value < 1:
-            raise AssumeValidationError(
+            raise ElhazValidationError(
                 f"Invalid max Unix socket connections: '{value}'"
             )
         self._max_unix_socket_connections = value
@@ -92,7 +92,7 @@ class Constants:
     @daemon_logging_path.setter
     def daemon_logging_path(self, value: Path) -> None:
         if not value or not isinstance(value, Path):
-            raise AssumeValidationError(
+            raise ElhazValidationError(
                 f"Invalid daemon logging path: '{value}'"
             )
         self._daemon_logging_path = value

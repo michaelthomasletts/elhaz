@@ -2,13 +2,13 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-"""CLI entry point for assume-cli.
+"""CLI entry point for elhaz.
 
 Usage
 -----
-assume [OPTIONS] COMMAND [ARGS]...
+elhaz [OPTIONS] COMMAND [ARGS]...
 
-Global options modify :class:`~assume.constants.Constants` before any
+Global options modify :class:`~elhaz.constants.Constants` before any
 subcommand runs.  They are forwarded verbatim to ``daemon _serve`` when
 starting the background daemon process so both sides share the same
 configuration.
@@ -23,10 +23,10 @@ from typing import Optional
 
 import typer
 
-from assume.constants import Constants
-from assume.daemon import Client
-from assume.exceptions import AssumeDaemonError
-from assume.models import CredentialProcessModel
+from elhaz.constants import Constants
+from elhaz.daemon import Client
+from elhaz.exceptions import ElhazDaemonError
+from elhaz.models import CredentialProcessModel
 
 from .config import app as _config_app
 from .daemon import app as _daemon_app
@@ -35,7 +35,7 @@ from .prompts import ask_yes_no, resolve_name
 from .state import state
 
 app = typer.Typer(
-    name="assume",
+    name="elhaz",
     help="Manage refreshable AWS credentials via a local daemon.",
     no_args_is_help=True,
 )
@@ -87,7 +87,7 @@ def _callback(
         show_default=False,
     ),
 ) -> None:
-    """assume — manage refreshable AWS credentials."""
+    """elhaz — manage refreshable AWS credentials."""
     if config_dir is not None:
         state.constants.config_dir = config_dir
     if config_file_extension is not None:
@@ -123,7 +123,7 @@ def _fetch_credentials(name: str) -> dict:
         try:
             with Client(constants) as client:
                 resp = client.send("credentials", {"config": name})
-        except AssumeDaemonError as exc:
+        except ElhazDaemonError as exc:
             print_error(f"Daemon unreachable: {exc}")
             raise typer.Exit(1)
         if resp.ok:
@@ -138,7 +138,7 @@ def _fetch_credentials(name: str) -> dict:
     try:
         with Client(constants) as client:
             add_resp = client.send("add", {"config": name})
-    except AssumeDaemonError as exc:
+    except ElhazDaemonError as exc:
         print_error(f"Daemon unreachable: {exc}")
         raise typer.Exit(1)
 
@@ -155,7 +155,7 @@ def _fetch_credentials(name: str) -> dict:
 
 
 class ExportFormat(str, Enum):
-    """Available output formats for ``assume export``."""
+    """Available output formats for ``elhaz export``."""
 
     json = "json"
     env = "env"
@@ -179,7 +179,7 @@ def export_cmd(
     ``--format json`` (default) prints the raw credentials dict.
 
     ``--format env`` prints ``export KEY=VALUE`` lines suitable for
-    ``eval $(assume export --format env -n myconfig)``.
+    ``eval $(elhaz export --format env -n myconfig)``.
 
     ``--format credential-process`` prints the JSON shape required by
     AWS ``credential_process`` profile entries.
@@ -227,14 +227,14 @@ def exec_cmd(
 
     Example:
 
-        assume exec -n myconfig -- aws s3 ls
+        elhaz exec -n myconfig -- aws s3 ls
     """
     constants = state.constants
     name = resolve_name(name, constants, message="Select a config:")
 
     command = ctx.args
     if not command:
-        print_error("No command specified. Usage: assume exec -n NAME -- CMD")
+        print_error("No command specified. Usage: elhaz exec -n NAME -- CMD")
         raise typer.Exit(1)
 
     creds = _fetch_credentials(name)
@@ -275,14 +275,14 @@ def shell_cmd(
 
     # Build the credential-process command that points at the daemon.
     cp_cmd = (
-        f"{sys.executable} -m assume.cli"
+        f"{sys.executable} -m elhaz.cli"
         f" --socket-path {constants.socket_path}"
         f" export --format credential-process -n {name}"
     )
 
     # Shell hook that re-exports env-var credentials before each prompt.
     refresh_cmd = (
-        f"eval $({sys.executable} -m assume.cli"
+        f"eval $({sys.executable} -m elhaz.cli"
         f" --socket-path {constants.socket_path}"
         f" export --format env -n {name})"
     )
@@ -305,10 +305,10 @@ def shell_cmd(
         )
     elif shell_name == "zsh":
         # zsh does not honour PROMPT_COMMAND natively; expose the
-        # command via ASSUME_PRECMD so the user can wire it up.
-        env["ASSUME_PRECMD"] = refresh_cmd
+        # command via ELHAZ_PRECMD so the user can wire it up.
+        env["ELHAZ_PRECMD"] = refresh_cmd
         typer.secho(
-            "  Tip: add 'eval $ASSUME_PRECMD' to your precmd_functions"
+            "  Tip: add 'eval $ELHAZ_PRECMD' to your precmd_functions"
             " for automatic env-var refresh in zsh.",
             fg=typer.colors.BLUE,
             err=True,
@@ -340,7 +340,7 @@ def whoami_cmd(
     try:
         with Client(constants) as client:
             response = client.send("whoami", {"config": name})
-    except AssumeDaemonError as exc:
+    except ElhazDaemonError as exc:
         print_error(f"Daemon unreachable: {exc}")
         raise typer.Exit(1)
 
@@ -353,7 +353,7 @@ def whoami_cmd(
                 try:
                     with Client(constants) as client:
                         add_resp = client.send("add", {"config": name})
-                except AssumeDaemonError as exc:
+                except ElhazDaemonError as exc:
                     print_error(f"Daemon unreachable: {exc}")
                     raise typer.Exit(1)
                 if not add_resp.ok:
@@ -377,7 +377,7 @@ def whoami_cmd(
 
 
 def main() -> None:
-    """Package entry point (``assume.cli.__main__:main``)."""
+    """Package entry point (``elhaz.cli.__main__:main``)."""
     app()
 
 

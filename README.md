@@ -77,6 +77,12 @@ You can export your automatically refreshed temporary AWS credenitals to stdout.
 assume export -n <your config name>
 ```
 
+Or export env vars with those credentials:
+
+```bash
+assume export -n <your config name> -f env
+```
+
 Or execute a one-off AWS command using those credentials.
 
 ```bash

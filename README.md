@@ -98,7 +98,7 @@ assume whoami -n <your config name>
 You can also pass `assume` to `credential_process` in your AWS profile. So long as the `assume` daemon is running, `credential_process` will receive the credentials from stdout.
 
 ```
-credential_process=assume export -n <your config name> -f credential-process
+credential_process="assume export -n <your config name> -f credential-process"
 ```
 
 ## Commands

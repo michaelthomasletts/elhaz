@@ -75,6 +75,7 @@ def _collect_optional(
     dict
         Non-empty field values keyed by field name.
     """
+
     result: dict = {}
     existing = existing or {}
     for key, label, cast, hint in fields:
@@ -108,6 +109,7 @@ def _build_config_interactively(
     dict
         Config payload ready to pass to :meth:`~assume.config.Config.add`.
     """
+
     existing = existing or {}
     existing_ar = existing.get("AssumeRole", {})
 
@@ -160,6 +162,7 @@ def _open_in_editor(path: "os.PathLike[str]") -> None:
     path : os.PathLike[str]
         File to open.
     """
+
     editor = os.environ.get("EDITOR", "vi")
     subprocess.run([editor, str(path)], check=False)
 
@@ -171,6 +174,7 @@ def config_add(
     ),
 ) -> None:
     """Create a new config in the local config store."""
+
     constants = state.constants
 
     if not name:
@@ -207,6 +211,7 @@ def config_add(
 @app.command("list")
 def config_list() -> None:
     """List all config names in the local config store."""
+
     names = list_local_configs(state.constants)
     if not names:
         typer.echo("No configs found.")
@@ -222,6 +227,7 @@ def config_get(
     ),
 ) -> None:
     """Return config details as formatted JSON."""
+
     constants = state.constants
 
     if not name:
@@ -263,6 +269,7 @@ def config_update(
     ),
 ) -> None:
     """Update a config interactively."""
+
     constants = state.constants
     name = resolve_name(name, constants, message="Select a config to update:")
     cfg = Config(name, constants)
@@ -297,6 +304,7 @@ def config_remove(
     ),
 ) -> None:
     """Remove a config from the local config store."""
+
     constants = state.constants
     name = resolve_name(name, constants, message="Select a config to remove:")
     cfg = Config(name, constants)

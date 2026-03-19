@@ -30,6 +30,7 @@ def list_local_configs(constants: Constants) -> list[str]:
     list[str]
         Sorted config names, or an empty list if the directory is absent.
     """
+
     if not constants.config_dir.exists():
         return []
     ext = constants.config_file_extension
@@ -54,6 +55,7 @@ def select_local_config(
     str
         Selected config name. Exits cleanly on Ctrl-C or empty store.
     """
+
     names = list_local_configs(constants)
     if not names:
         typer.secho(
@@ -86,6 +88,7 @@ def select_daemon_session(
     str
         Selected session name. Exits on error or Ctrl-C.
     """
+
     try:
         with Client(constants) as client:
             response = client.send("list")
@@ -134,6 +137,7 @@ def resolve_name(
     str
         Resolved name.
     """
+
     if name:
         return name
     if from_daemon:
@@ -156,6 +160,7 @@ def ask_yes_no(question: str, *, default: bool = True) -> bool:
     bool
         True for yes, False for no. Exits cleanly on Ctrl-C.
     """
+
     result = questionary.confirm(question, default=default).ask()
     if result is None:
         raise typer.Exit(0)

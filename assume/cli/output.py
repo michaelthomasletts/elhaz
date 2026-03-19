@@ -26,6 +26,7 @@ def print_json(data: Any) -> None:
     data : Any
         JSON-serializable value to display.
     """
+
     formatted = json.dumps(data, indent=2, default=str)
     if sys.stdout.isatty():
         typer.echo(
@@ -44,6 +45,7 @@ def print_error(message: str) -> None:
     message : str
         Error description.
     """
+
     typer.secho(f"Error: {message}", fg=typer.colors.RED, err=True)
 
 
@@ -55,4 +57,5 @@ def print_success(message: str) -> None:
     message : str
         Success description.
     """
+
     typer.secho(message, fg=typer.colors.GREEN)

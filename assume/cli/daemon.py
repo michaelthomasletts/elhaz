@@ -35,6 +35,7 @@ app = typer.Typer(
 
 def _is_running() -> bool:
     """Return True if the daemon is reachable on the current socket."""
+
     try:
         with Client(state.constants) as c:
             c.send("list")
@@ -56,6 +57,7 @@ def _wait_until_running(timeout: float = 5.0) -> bool:
     bool
         True if the daemon became reachable within *timeout*.
     """
+
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         if _is_running():
@@ -77,6 +79,7 @@ def _wait_until_stopped(timeout: float = 5.0) -> bool:
     bool
         True if the daemon became unreachable within *timeout*.
     """
+
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         if not _is_running():
@@ -120,6 +123,7 @@ def _daemon_subprocess_cmd() -> list[str]:
 @app.command("start")
 def daemon_start() -> None:
     """Start the daemon in the background."""
+
     if _is_running():
         typer.echo("Daemon is already running.")
         return
@@ -148,6 +152,7 @@ def daemon_start() -> None:
 @app.command("stop")
 def daemon_stop() -> None:
     """Stop the running daemon gracefully."""
+
     if not _is_running():
         typer.echo("Daemon is not running.")
         return
@@ -175,6 +180,7 @@ def daemon_stop() -> None:
 @app.command("kill")
 def daemon_kill() -> None:
     """Forcefully stop the daemon (alias for ``stop``)."""
+
     daemon_stop()
 
 
@@ -198,6 +204,7 @@ def daemon_logs(
     Defaults to the last 50 lines. Use ``--head`` for the first N
     lines, or ``--tail 0`` to stream the entire file.
     """
+
     path = state.constants.daemon_logging_path
 
     if not path.exists():
@@ -218,6 +225,7 @@ def daemon_logs(
 @app.command("list")
 def daemon_list() -> None:
     """List all active sessions in the daemon's cache."""
+
     try:
         with Client(state.constants) as client:
             response = client.send("list")
@@ -246,6 +254,7 @@ def daemon_add(
     ),
 ) -> None:
     """Initialize an AWS session and add it to the daemon's cache."""
+
     constants = state.constants
     name = resolve_name(name, constants, message="Select a config:")
 
@@ -272,6 +281,7 @@ def daemon_remove(
     ),
 ) -> None:
     """Remove an active session from the daemon's cache."""
+
     constants = state.constants
     name = resolve_name(
         name,

@@ -42,6 +42,7 @@ def _error_code(exc: BaseAssumeError) -> int:
     int
         400, 404, 409, or 500.
     """
+
     return _ERROR_CODES.get(type(exc), 500)
 
 
@@ -75,6 +76,7 @@ class DaemonService:
         Dict[str, str]
             Confirmation payload containing the config name.
         """
+
         with self._lock:
             self._cache[config] = Session(config)
             return {"config": config}
@@ -97,6 +99,7 @@ class DaemonService:
         AssumeNotFoundError
             If no active session exists for the given config.
         """
+
         with self._lock:
             session = self._cache.get(config)
             if session is None:
@@ -114,6 +117,7 @@ class DaemonService:
         list[str]
             Session names in recency order.
         """
+
         with self._lock:
             return list(self._cache.keys())
 
@@ -135,6 +139,7 @@ class DaemonService:
         AssumeNotFoundError
             If no session for the given config is cached.
         """
+
         with self._lock:
             del self._cache[config]
             return {"config": config}
@@ -157,6 +162,7 @@ class DaemonService:
         AssumeNotFoundError
             If no active session exists for the given config.
         """
+
         with self._lock:
             session = self._cache.get(config)
             if session is None:
@@ -192,6 +198,7 @@ class DaemonService:
         AssumeNotFoundError
             If the requested session does not exist.
         """
+
         payload = request.payload
 
         def _cfg() -> str:
@@ -282,6 +289,7 @@ class Server:
             If a live daemon occupies the path, the path is a non-socket
             file, or probing the socket yields an unexpected OS error.
         """
+
         path = self._constants.socket_path
 
         if not path.exists():
@@ -342,6 +350,7 @@ class Server:
         bool
             True if the ``kill`` action was processed, False otherwise.
         """
+
         try:
             raw = conn_file.readline()
         except OSError:
@@ -443,6 +452,7 @@ class Server:
         Calls :meth:`stop` and joins all client threads on exit,
         regardless of how the loop exits.
         """
+
         self._running.set()
         try:
             while self._running.is_set():
@@ -475,6 +485,7 @@ class Server:
         Returns immediately; :meth:`run` joins client threads on exit.
         Safe to call multiple times.
         """
+
         self._running.clear()
 
         try:
@@ -555,6 +566,7 @@ class Client:
         AssumeDaemonError
             If the daemon closes the connection without responding.
         """
+
         request = RequestModel(
             request_id=uuid4(),
             action=action,  # type: ignore[assignment]
@@ -574,6 +586,7 @@ class Client:
 
     def close(self) -> None:
         """Close the underlying socket connection."""
+
         try:
             self._conn_file.close()
         except OSError:

@@ -20,7 +20,7 @@ assume is a CLI tool with a daemon for exposing automatically refreshed temporar
 
 ## Commands
 
-```bash
+```
 % assume --help
 
  Usage: assume [OPTIONS] COMMAND [ARGS]...                                                                                                                                                                
@@ -47,7 +47,7 @@ assume is a CLI tool with a daemon for exposing automatically refreshed temporar
 ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
 
-```bash
+```
 % assume config --help
 
  Usage: assume config [OPTIONS] COMMAND [ARGS]...                                                                                                                                                         
@@ -66,7 +66,7 @@ assume is a CLI tool with a daemon for exposing automatically refreshed temporar
 ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
 
-```bash
+```
 % assume daemon --help
 
  Usage: assume daemon [OPTIONS] COMMAND [ARGS]...                                                                                                                                                         

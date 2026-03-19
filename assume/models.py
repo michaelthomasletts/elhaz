@@ -3,6 +3,7 @@
 __all__ = [
     "AssumeRoleModel",
     "ConfigModel",
+    "CredentialProcessModel",
     "ErrorModel",
     "MFAModel",
     "RequestModel",
@@ -93,6 +94,30 @@ class ConfigModel(_BaseModel):
     STS: Optional[STSModel] = None
     MFA: Optional[MFAModel] = None
     Session: Optional[SessionModel] = None
+
+
+class CredentialProcessModel(BaseModel):
+    """JSON shape required by AWS ``credential_process``.
+
+    Attributes
+    ----------
+    Version : int
+        Credential process protocol version. Always 1.
+    AccessKeyId : str
+        AWS access key ID.
+    SecretAccessKey : str
+        AWS secret access key.
+    SessionToken : str
+        AWS session token.
+    Expiration : str
+        ISO 8601 expiration timestamp.
+    """
+
+    Version: int = 1
+    AccessKeyId: str
+    SecretAccessKey: str
+    SessionToken: str
+    Expiration: str
 
 
 class ErrorModel(_BaseModel):

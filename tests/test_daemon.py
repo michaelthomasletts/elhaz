@@ -14,18 +14,12 @@ from assume.daemon import Client, DaemonService, Server
 from assume.exceptions import AssumeDaemonError
 from assume.models import ResponseModel
 
-# ---------------------------------------------------------------------------
-# Fakes
-# ---------------------------------------------------------------------------
-
 
 class FakeSTSClient:
     def get_caller_identity(self) -> dict:
         return {
             "Account": "123456789012",
-            "Arn": (
-                "arn:aws:sts::123456789012:assumed-role/demo/session"
-            ),
+            "Arn": ("arn:aws:sts::123456789012:assumed-role/demo/session"),
             "UserId": "AROATEST:session",
         }
 
@@ -48,11 +42,6 @@ class FakeSession:
         self.session = FakeRefreshableSession()
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
 def _socket_path(prefix: str = "assume-test") -> Path:
     return Path("/tmp") / f"{prefix}-{uuid.uuid4().hex}.sock"
 
@@ -64,11 +53,6 @@ def _wait_for_socket(path: Path, timeout: float = 2.0) -> None:
             return
         time.sleep(0.01)
     raise AssertionError(f"Socket {path!r} did not appear in time.")
-
-
-# ---------------------------------------------------------------------------
-# Fixtures
-# ---------------------------------------------------------------------------
 
 
 @pytest.fixture()
@@ -93,11 +77,6 @@ def running_server(constants, service):
     yield server, constants
     server.stop()
     thread.join(timeout=2)
-
-
-# ---------------------------------------------------------------------------
-# Basic round-trip
-# ---------------------------------------------------------------------------
 
 
 def test_add_session(running_server):
@@ -158,11 +137,6 @@ def test_remove_session(running_server):
     assert list_response.data == []
 
 
-# ---------------------------------------------------------------------------
-# Protocol correctness
-# ---------------------------------------------------------------------------
-
-
 def test_request_id_is_echoed(running_server):
     """The response request_id must match the one sent in the request."""
     server, constants = running_server
@@ -187,11 +161,6 @@ def test_request_id_is_echoed(running_server):
 
     response = ResponseModel.model_validate_json(raw.rstrip())
     assert str(response.request_id) == req_id
-
-
-# ---------------------------------------------------------------------------
-# Error handling
-# ---------------------------------------------------------------------------
 
 
 def test_invalid_json_returns_structured_400(running_server):
@@ -274,11 +243,6 @@ def test_server_continues_after_error(running_server):
     assert ok_response.ok is True
 
 
-# ---------------------------------------------------------------------------
-# Concurrency
-# ---------------------------------------------------------------------------
-
-
 def test_idle_client_does_not_block_second_client(running_server):
     """An open but idle connection must not block a second client."""
     server, constants = running_server
@@ -300,11 +264,6 @@ def test_idle_client_does_not_block_second_client(running_server):
     assert not t.is_alive(), "Second client thread timed out"
     assert result["response"].ok is True
     assert result["response"].data == []
-
-
-# ---------------------------------------------------------------------------
-# Lifecycle
-# ---------------------------------------------------------------------------
 
 
 def test_stop_removes_socket_file(constants, service):
@@ -333,11 +292,6 @@ def test_stop_is_idempotent(constants, service):
     assert not thread.is_alive()
 
 
-# ---------------------------------------------------------------------------
-# kill action
-# ---------------------------------------------------------------------------
-
-
 def test_kill_stops_server(running_server):
     """kill action must shut the server down cleanly."""
     server, constants = running_server
@@ -354,11 +308,6 @@ def test_kill_stops_server(running_server):
             break
         time.sleep(0.01)
     assert not constants.socket_path.exists()
-
-
-# ---------------------------------------------------------------------------
-# Startup socket handling
-# ---------------------------------------------------------------------------
 
 
 def test_startup_rejects_live_daemon(constants, service):
@@ -406,20 +355,10 @@ def test_startup_rejects_non_socket_path(constants, service):
         constants.socket_path.unlink(missing_ok=True)
 
 
-# ---------------------------------------------------------------------------
-# Client connection errors
-# ---------------------------------------------------------------------------
-
-
 def test_client_wraps_connection_error(constants):
     """Client.__init__ must raise AssumeDaemonError when no daemon listens."""
     with pytest.raises(AssumeDaemonError, match="Could not connect"):
         Client(constants)
-
-
-# ---------------------------------------------------------------------------
-# Graceful shutdown
-# ---------------------------------------------------------------------------
 
 
 def test_stop_before_run_does_not_raise(constants, service):
@@ -464,9 +403,7 @@ def test_sigterm_shuts_down_server(constants, service):
 
     # Fire SIGTERM after the server is listening. The 0.5 s accept()
     # timeout means run() exits within ~0.7 s of the signal.
-    timer = threading.Timer(
-        0.2, lambda: os.kill(os.getpid(), signal.SIGTERM)
-    )
+    timer = threading.Timer(0.2, lambda: os.kill(os.getpid(), signal.SIGTERM))
     timer.start()
     try:
         server.run()  # blocks in the main thread

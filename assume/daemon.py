@@ -57,7 +57,7 @@ def configure_daemon_logging(constants: Constants) -> None:
     any existing :class:`~logging.handlers.RotatingFileHandler` on the
     ``assume`` logger is replaced before the new one is added.
 
-    Log records are written to ``constants.logging_path`` in a
+    Log records are written to ``constants.daemon_logging_path`` in a
     human-readable format. The parent directory is created if it does
     not exist. ``propagate`` is left enabled so pytest's ``caplog``
     fixture continues to work in tests.
@@ -65,7 +65,7 @@ def configure_daemon_logging(constants: Constants) -> None:
     Parameters
     ----------
     constants : Constants
-        Daemon configuration; ``logging_path`` determines the log file.
+        Daemon configuration; ``daemon_logging_path`` determines the log file.
     """
 
     pkg_logger = logging.getLogger("assume")
@@ -77,10 +77,10 @@ def configure_daemon_logging(constants: Constants) -> None:
             pkg_logger.removeHandler(h)
             h.close()
 
-    constants.logging_path.parent.mkdir(parents=True, exist_ok=True)
+    constants.daemon_logging_path.parent.mkdir(parents=True, exist_ok=True)
 
     handler = RotatingFileHandler(
-        constants.logging_path,
+        constants.daemon_logging_path,
         maxBytes=5 * 1024 * 1024,  # 5 MB per file
         backupCount=3,
         encoding="utf-8",
@@ -316,6 +316,10 @@ class Server:
 
         self._prepare_socket_path()
 
+        # Ensure the parent directory exists; the default socket path
+        # (~/.assume/sock/) is not guaranteed to be present on first run.
+        self._constants.socket_path.parent.mkdir(parents=True, exist_ok=True)
+
         self._sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self._sock.bind(str(self._constants.socket_path))
         self._sock.settimeout(0.5)
@@ -323,7 +327,7 @@ class Server:
         logger.info(
             "Listening on %s. Log: %s",
             self._constants.socket_path,
-            self._constants.logging_path,
+            self._constants.daemon_logging_path,
         )
         atexit.register(self.stop)
 
@@ -546,6 +550,7 @@ class Server:
         old_sigint: Any = None
 
         if in_main := threading.current_thread() is threading.main_thread():
+
             def _signal_handler(signum: int, frame: Any) -> None:
                 logger.info(
                     "Received signal %d (%s), shutting down.",

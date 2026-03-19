@@ -1,6 +1,6 @@
 """UNIX socket daemon for managing refreshable AWS sessions."""
 
-__all__ = ["Client", "DaemonService", "Server"]
+__all__ = ["Client", "DaemonService", "Server", "configure_daemon_logging"]
 
 import atexit
 import logging
@@ -8,6 +8,7 @@ import os
 import signal
 import socket
 import threading
+from logging.handlers import RotatingFileHandler
 from typing import Any, Dict
 from uuid import uuid4
 
@@ -46,6 +47,53 @@ def _error_code(exc: BaseAssumeError) -> int:
     """
 
     return _ERROR_CODES.get(type(exc), 500)
+
+
+def configure_daemon_logging(constants: Constants) -> None:
+    """Attach a rotating file handler to the ``assume`` package logger.
+
+    Intended to be called once by the daemon entry point before
+    constructing :class:`Server`. Calling it multiple times is safe:
+    any existing :class:`~logging.handlers.RotatingFileHandler` on the
+    ``assume`` logger is replaced before the new one is added.
+
+    Log records are written to ``constants.logging_path`` in a
+    human-readable format. The parent directory is created if it does
+    not exist. ``propagate`` is left enabled so pytest's ``caplog``
+    fixture continues to work in tests.
+
+    Parameters
+    ----------
+    constants : Constants
+        Daemon configuration; ``logging_path`` determines the log file.
+    """
+
+    pkg_logger = logging.getLogger("assume")
+
+    # Remove any existing RotatingFileHandler (e.g. from a previous call
+    # or a reconfigure).  Leave StreamHandlers and others untouched.
+    for h in list(pkg_logger.handlers):
+        if isinstance(h, RotatingFileHandler):
+            pkg_logger.removeHandler(h)
+            h.close()
+
+    constants.logging_path.parent.mkdir(parents=True, exist_ok=True)
+
+    handler = RotatingFileHandler(
+        constants.logging_path,
+        maxBytes=5 * 1024 * 1024,  # 5 MB per file
+        backupCount=3,
+        encoding="utf-8",
+    )
+    handler.setFormatter(
+        logging.Formatter(
+            "%(asctime)s [%(levelname)-8s] %(name)s: %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
+    )
+
+    pkg_logger.setLevel(logging.INFO)
+    pkg_logger.addHandler(handler)
 
 
 class DaemonService:
@@ -272,7 +320,11 @@ class Server:
         self._sock.bind(str(self._constants.socket_path))
         self._sock.settimeout(0.5)
         self._sock.listen(self._constants.max_unix_socket_connections)
-        logger.info("Listening on %s", self._constants.socket_path)
+        logger.info(
+            "Listening on %s. Log: %s",
+            self._constants.socket_path,
+            self._constants.logging_path,
+        )
         atexit.register(self.stop)
 
     def _prepare_socket_path(self) -> None:
@@ -303,6 +355,9 @@ class Server:
             return
 
         if not path.is_socket():
+            logger.warning(
+                "Socket path %s is occupied by a non-socket file.", path
+            )
             raise AssumeDaemonError(
                 f"Socket path {path!r} is occupied by a non-socket file."
             )
@@ -327,6 +382,7 @@ class Server:
             probe.close()
 
         os.unlink(path)
+        logger.info("Removed stale socket at %s.", path)
 
     @staticmethod
     def _send(conn_file: Any, response: ResponseModel) -> None:
@@ -371,6 +427,7 @@ class Server:
         try:
             request = RequestModel.model_validate_json(raw.rstrip())
         except Exception as exc:
+            logger.warning("Unparseable request: %s", exc)
             response = ResponseModel(
                 request_id=uuid4(),
                 ok=False,
@@ -385,9 +442,16 @@ class Server:
                 ...
             return False
 
+        logger.info(
+            "Request: action=%s request_id=%s",
+            request.action,
+            request.request_id,
+        )
+
         # kill is a transport-layer concern: signal the server to stop
         # after flushing the acknowledgement. DaemonService never sees it.
         if request.action == "kill":
+            logger.info("Kill action received, initiating shutdown.")
             try:
                 self._send(
                     conn_file,
@@ -404,6 +468,13 @@ class Server:
             data = self._service.dispatch(request)
         except BaseAssumeError as exc:
             response = self._build_error_response(request.request_id, exc)
+            logger.warning(
+                "Request error %d: action=%s request_id=%s: %s",
+                _error_code(exc),
+                request.action,
+                request.request_id,
+                exc,
+            )
         except Exception as exc:
             logger.exception(
                 "Unexpected error dispatching action '%s'",
@@ -419,6 +490,11 @@ class Server:
                 request_id=request.request_id,
                 ok=True,
                 data=data,
+            )
+            logger.info(
+                "Request OK: action=%s request_id=%s",
+                request.action,
+                request.request_id,
             )
 
         try:
@@ -470,12 +546,19 @@ class Server:
         old_sigint: Any = None
 
         if in_main := threading.current_thread() is threading.main_thread():
-            old_sigterm = signal.signal(
-                signal.SIGTERM, lambda s, f: self.stop()
-            )
-            old_sigint = signal.signal(signal.SIGINT, lambda s, f: self.stop())
+            def _signal_handler(signum: int, frame: Any) -> None:
+                logger.info(
+                    "Received signal %d (%s), shutting down.",
+                    signum,
+                    signal.Signals(signum).name,
+                )
+                self.stop()
+
+            old_sigterm = signal.signal(signal.SIGTERM, _signal_handler)
+            old_sigint = signal.signal(signal.SIGINT, _signal_handler)
 
         self._running.set()
+        logger.info("Accept loop started.")
 
         try:
             while self._running.is_set():
@@ -500,8 +583,10 @@ class Server:
             if in_main:
                 signal.signal(signal.SIGTERM, old_sigterm)
                 signal.signal(signal.SIGINT, old_sigint)
+            logger.info("Daemon shutting down.")
             self.stop()
             self._join_client_threads()
+            logger.info("Daemon stopped.")
 
     def stop(self) -> None:
         """Signal the server to stop and clean up resources.

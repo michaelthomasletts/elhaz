@@ -20,6 +20,9 @@ class Constants:
     socket_path : Path
         The path to the Unix socket for daemon communication. Default is
         /tmp/assume.sock.
+    logging_path : Path
+        The path to the log file for the daemon. Default is
+        ~/.assume/assume.log.
     max_unix_socket_connections : int
         The maximum number of pending Unix socket connections the daemon will
         allow in its listen backlog. Default is 5.
@@ -28,6 +31,7 @@ class Constants:
     _config_dir: Path = Path.home() / ".assume/configs"
     _config_file_extension: str = ".yaml"
     _socket_path: Path = Path(f"/tmp/assume-{uuid.uuid4().hex}.sock")
+    _logging_path: Path = Path.home() / ".assume/assume.log"
     _max_unix_socket_connections: int = 5
 
     @property
@@ -77,3 +81,13 @@ class Constants:
                 f"Invalid max Unix socket connections: '{value}'"
             )
         self._max_unix_socket_connections = value
+
+    @property
+    def logging_path(self) -> Path:
+        return self._logging_path
+
+    @logging_path.setter
+    def logging_path(self, value: Path) -> None:
+        if not value or not isinstance(value, Path):
+            raise AssumeValidationError(f"Invalid logging path: '{value}'")
+        self._logging_path = value

@@ -63,7 +63,15 @@ Next, start the daemon.
 assume daemon start
 ```
 
-Now you can export your automatically refreshed temporary AWS credenitals to stdout.
+Initialize the AWS session for your config.
+
+```bash
+assume daemon add -n <your config name>
+```
+
+Now the fun begins.
+
+You can export your automatically refreshed temporary AWS credenitals to stdout.
 
 ```bash
 assume export -n <your config name>

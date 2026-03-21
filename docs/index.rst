@@ -9,63 +9,67 @@ elhaz
 
 **Maintainers:** `61418 <https://61418.io>`_
 
-What is elhaz?
---------------
+Description
+-----------
 
-elhaz is a CLI tool for managing and reusing temporary AWS credentials locally.
+elhaz provides a local credential management system for AWS temporary credentials.
 
-It creates one AWS session per :ref:`config <config>`, keeps it alive, refreshes temporary AWS credentials automatically, and makes those credentials available across shells, scripts, SDKs, and tools.
-
-Instead of repeatedly assuming roles or re-running credential processes, elhaz maintains a single refreshable session per role and reuses it across your workflow.
-
-It provides a simple interface:
-
-- ``elhaz exec`` to run one-off commands with credentials
-- ``elhaz shell`` for an interactive environment
-- ``elhaz export`` for environment variables or integration with other tools
-- ``elhaz whoami`` to inspect the active identity
-
-Under the hood, elhaz runs a local daemon that caches sessions, refreshes credentials before expiration, and serves them instantly to any local consumer.
-
-The result is a consistent, low-friction way to work with multiple assumed AWS roles.
+It maintains a bounded, refreshable cache of AWS sessions, each corresponding to a named configuration, and exposes those credentials to shells, SDKs, CLIs, and other tools.
+A long-lived daemon process coordinates session lifecycle, refresh, and retrieval across local consumers.
 
 
-Why this exists
+Why this Exists
 ---------------
 
-Working with AWS credentials locally is often fragmented and repetitive.
+Temporary AWS credentials expire.
 
-- Each tool manages credentials differently
-- Temporary credentials are fetched multiple times across processes
-- Sessions expire unpredictably
-- Switching between roles requires constant reconfiguration
+Managing that expiration locally — whether through ``credential_process``, environment variables, or tool-specific behavior — often leads to repeated session creation, redundant STS calls, and credentials that expire at inconvenient times.
 
-AWS provides primitives for credential management, but it does not coordinate them across your local environment.
+AWS provides primitives for credential retrieval and refresh.
+However, these mechanisms operate at the level of individual processes and do not coordinate credential reuse across a local environment.
 
-elhaz fills that gap.
+As a result:
 
-It introduces a single local authority for credentials:
+- The same role may be assumed multiple times across different processes
+- Credential refresh occurs independently per tool
+- Session lifecycles are fragmented and difficult to reason about
 
-- One session per configuration
-- Automatic refresh before expiration
-- Shared across shells, scripts, and tools
-- No repeated STS calls for the same role
+elhaz introduces a single, local coordination layer for temporary credentials.
 
-This allows you to work with multiple IAM roles without thinking about credential lifecycles.
+Each configuration corresponds to one session, which is:
+
+- Initialized once
+- Reused across processes
+- Refreshed automatically before expiration
+
+This ensures credential retrieval is consistent, efficient, and predictable.
 
 
 Design
 ------
 
-elhaz consists of three components:
+elhaz separates credential management into three components:
 
-- **Config** — Named YAML configurations stored in ``~/.elhaz/configs/``
-- **Daemon** — A local process that manages and refreshes sessions
-- **CLI** — A command-line interface for interacting with configurations and credentials
+- **Config**: Named YAML configurations stored in ``~/.elhaz/configs/``, defining how sessions are initialized
+- **Daemon**: A local process maintaining a bounded LRU cache of active sessions
+- **CLI**: A command-line interface for interacting with configurations and retrieving credentials
 
-The CLI communicates with the daemon over a UNIX domain socket using a simple request/response protocol.
+Each session is backed by `boto3-refresh-session <https://github.com/61418/boto3-refresh-session>`_, which provides automatic credential refresh.
 
-Most users do not need to think about these components directly — they exist to make credential management reliable and transparent.
+The daemon enforces:
+
+- One session per configuration
+- Bounded cache size with LRU eviction
+- Centralized refresh and lifecycle management
+
+Communication between the CLI and daemon occurs over a UNIX domain socket using a request/response protocol.
+
+These design decisions reflect the core goals of elhaz:
+
+- **Deterministic session reuse**
+- **Centralized credential lifecycle management**
+- **Reduced redundant STS calls**
+- **Consistent behavior across local tools**
 
 .. toctree::
    :maxdepth: 1

@@ -10,8 +10,8 @@ These configs are stored by default in ``~/.elhaz/configs/`` as YAML files.
 
 There are two methods for creating configs:
 
-1. Manually by hand.
-2. Using ``elhaz config add``.
+1. Manually by hand (not recommended)
+2. Using ``elhaz config add`` (recommended)
 
 **It is highly recommended to use the second method**.
 
@@ -22,7 +22,6 @@ There are four categories of parameters for configs, which you may explore below
 
 .. toctree::
    :maxdepth: 1
-   :name: Config
 
     AssumeRole <assumerole>
     STS <sts>

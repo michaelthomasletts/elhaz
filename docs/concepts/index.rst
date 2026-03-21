@@ -4,8 +4,7 @@ Concepts
 ========
 
 .. toctree::
-   :maxdepth: 1
-   :name: Concepts
+   :maxdepth: 2
 
     Config <config>
     Daemon <daemon>

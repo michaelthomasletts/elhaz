@@ -74,9 +74,10 @@ Or export env vars.
 
 Or export the credentials in a format compatible with `credential_process` in your AWS profile.
 
-.. code-block:: bash
+.. code-block:: ini
 
-    credential_process="elhaz export -n <your config name> -f credential-process"
+   [profile my-role]
+   credential_process = elhaz export -n <your config name> -f credential-process
 
 You may also execute a one-off AWS CLI command using the config's credentials.
 

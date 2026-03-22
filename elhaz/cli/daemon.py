@@ -22,9 +22,9 @@ from elhaz.daemon import (
 )
 from elhaz.exceptions import ElhazDaemonError
 
+from ..constants import state
 from .output import print_error, print_success
 from .prompts import resolve_name
-from .state import state
 
 app = typer.Typer(
     name="daemon",
@@ -37,7 +37,7 @@ def _is_running() -> bool:
     """Return True if the daemon is reachable on the current socket."""
 
     try:
-        with Client(state.constants) as c:
+        with Client(state) as c:
             c.send("list")
         return True
     except ElhazDaemonError:
@@ -100,21 +100,20 @@ def _daemon_subprocess_cmd() -> list[str]:
         Argv for :func:`subprocess.Popen`.
     """
 
-    c = state.constants
     return [
         sys.executable,
         "-m",
         "elhaz.cli",
         "--socket-path",
-        str(c.socket_path),
+        str(state.socket_path),
         "--logging-path",
-        str(c.daemon_logging_path),
+        str(state.daemon_logging_path),
         "--config-dir",
-        str(c.config_dir),
+        str(state.config_dir),
         "--max-unix-socket-connections",
-        str(c.max_unix_socket_connections),
+        str(state.max_unix_socket_connections),
         "--max-daemon-cache-size",
-        str(c.max_daemon_cache_size),
+        str(state.max_daemon_cache_size),
         "daemon",
         "_serve",
     ]
@@ -136,15 +135,14 @@ def daemon_start() -> None:
         stdin=subprocess.DEVNULL,
     )
 
-    c = state.constants
     if _wait_until_running():
         print_success("Daemon started.")
-        typer.echo(f"  Socket:  {c.socket_path}")
-        typer.echo(f"  Log:     {c.daemon_logging_path}")
+        typer.echo(f"  Socket:  {state.socket_path}")
+        typer.echo(f"  Log:     {state.daemon_logging_path}")
     else:
         print_error(
             "Daemon did not start within 5 seconds. "
-            f"Check the log file: {c.daemon_logging_path}"
+            f"Check the log file: {state.daemon_logging_path}"
         )
         raise typer.Exit(1)
 
@@ -158,7 +156,7 @@ def daemon_stop() -> None:
         return
 
     try:
-        with Client(state.constants) as client:
+        with Client(state) as client:
             response = client.send("kill")
     except ElhazDaemonError as exc:
         print_error(str(exc))
@@ -205,7 +203,7 @@ def daemon_logs(
     lines, or ``--tail 0`` to stream the entire file.
     """
 
-    path = state.constants.daemon_logging_path
+    path = state.daemon_logging_path
 
     if not path.exists():
         typer.echo("No log file found.")
@@ -227,7 +225,7 @@ def daemon_list() -> None:
     """List all active sessions in the daemon's cache."""
 
     try:
-        with Client(state.constants) as client:
+        with Client(state) as client:
             response = client.send("list")
     except ElhazDaemonError as exc:
         print_error(f"Daemon unreachable: {exc}")
@@ -255,11 +253,10 @@ def daemon_add(
 ) -> None:
     """Initialize an AWS session and add it to the daemon's cache."""
 
-    constants = state.constants
-    name = resolve_name(name, constants, message="Select a config:")
+    name = resolve_name(name, state, message="Select a config:")
 
     try:
-        with Client(constants) as client:
+        with Client(state) as client:
             response = client.send("add", {"config": name})
     except ElhazDaemonError as exc:
         print_error(f"Daemon unreachable: {exc}")
@@ -282,16 +279,15 @@ def daemon_remove(
 ) -> None:
     """Remove an active session from the daemon's cache."""
 
-    constants = state.constants
     name = resolve_name(
         name,
-        constants,
+        state,
         from_daemon=True,
         message="Select a session to remove:",
     )
 
     try:
-        with Client(constants) as client:
+        with Client(state) as client:
             response = client.send("remove", {"config": name})
     except ElhazDaemonError as exc:
         print_error(f"Daemon unreachable: {exc}")
@@ -310,14 +306,13 @@ def daemon_remove(
 def daemon_serve() -> None:
     """Start the daemon server (internal; invoked by ``daemon start``)."""
 
-    constants = state.constants
-    configure_daemon_logging(constants)
+    configure_daemon_logging(state)
 
     _log = logging.getLogger(__name__)
 
     try:
-        service = DaemonService(max_size=constants.max_daemon_cache_size)
-        server = Server(constants, service)
+        service = DaemonService(max_size=state.max_daemon_cache_size)
+        server = Server(state, service)
         server.run()
     except Exception:
         # stderr is /dev/null in the detached subprocess, so any startup

@@ -28,11 +28,11 @@ from elhaz.daemon import Client
 from elhaz.exceptions import ElhazDaemonError
 from elhaz.models import CredentialProcessModel
 
+from ..constants import state
 from .config import app as _config_app
 from .daemon import app as _daemon_app
 from .output import print_error, print_json
 from .prompts import ask_yes_no, resolve_name
-from .state import state
 
 app_help_text = """
 ᛉ elhaz ᛉ
@@ -95,17 +95,15 @@ def _callback(
 ) -> None:
     """elhaz — manage refreshable AWS credentials."""
     if config_dir is not None:
-        state.constants.config_dir = config_dir
+        state.config_dir = config_dir
     if socket_path is not None:
-        state.constants.socket_path = socket_path
+        state.socket_path = socket_path
     if logging_path is not None:
-        state.constants.daemon_logging_path = logging_path
+        state.daemon_logging_path = logging_path
     if max_unix_socket_connections is not None:
-        state.constants.max_unix_socket_connections = (
-            max_unix_socket_connections
-        )
+        state.max_unix_socket_connections = max_unix_socket_connections
     if max_daemon_cache_size is not None:
-        state.constants.max_daemon_cache_size = max_daemon_cache_size
+        state.max_daemon_cache_size = max_daemon_cache_size
 
 
 def _fetch_credentials(name: str) -> dict:
@@ -123,11 +121,10 @@ def _fetch_credentials(name: str) -> dict:
     dict
         Raw credentials dict from the daemon.
     """
-    constants = state.constants
 
     def _send_credentials() -> dict | None:
         try:
-            with Client(constants) as client:
+            with Client(state) as client:
                 resp = client.send("credentials", {"config": name})
         except ElhazDaemonError as exc:
             print_error(f"Daemon unreachable: {exc}")
@@ -142,7 +139,7 @@ def _fetch_credentials(name: str) -> dict:
 
     # Session not cached — add it, then retry once.
     try:
-        with Client(constants) as client:
+        with Client(state) as client:
             add_resp = client.send("add", {"config": name})
     except ElhazDaemonError as exc:
         print_error(f"Daemon unreachable: {exc}")
@@ -190,8 +187,8 @@ def export_cmd(
     ``--format credential-process`` prints the JSON shape required by
     AWS ``credential_process`` profile entries.
     """
-    constants = state.constants
-    name = resolve_name(name, constants, message="Select a config:")
+
+    name = resolve_name(name, state, message="Select a config:")
     creds = _fetch_credentials(name)
 
     if fmt == ExportFormat.json:
@@ -235,8 +232,8 @@ def exec_cmd(
 
         elhaz exec -n myconfig -- aws s3 ls
     """
-    constants = state.constants
-    name = resolve_name(name, constants, message="Select a config:")
+
+    name = resolve_name(name, state, message="Select a config:")
 
     command = ctx.args
     if not command:
@@ -272,8 +269,8 @@ def shell_cmd(
     For bash/sh, ``PROMPT_COMMAND`` is set to re-export credentials
     before each prompt so the env vars stay current.
     """
-    constants = state.constants
-    name = resolve_name(name, constants, message="Select a config:")
+
+    name = resolve_name(name, state, message="Select a config:")
     creds = _fetch_credentials(name)
 
     shell = os.environ.get("SHELL", "/bin/bash")
@@ -282,14 +279,14 @@ def shell_cmd(
     # Build the credential-process command that points at the daemon.
     cp_cmd = (
         f"{sys.executable} -m elhaz.cli"
-        f" --socket-path {constants.socket_path}"
+        f" --socket-path {state.socket_path}"
         f" export --format credential-process -n {name}"
     )
 
     # Shell hook that re-exports env-var credentials before each prompt.
     refresh_cmd = (
         f"eval $({sys.executable} -m elhaz.cli"
-        f" --socket-path {constants.socket_path}"
+        f" --socket-path {state.socket_path}"
         f" export --format env -n {name})"
     )
 
@@ -340,11 +337,11 @@ def whoami_cmd(
     ),
 ) -> None:
     """Return the STS caller identity for the specified config."""
-    constants = state.constants
-    name = resolve_name(name, constants, message="Select a config:")
+
+    name = resolve_name(name, state, message="Select a config:")
 
     try:
-        with Client(constants) as client:
+        with Client(state) as client:
             response = client.send("whoami", {"config": name})
     except ElhazDaemonError as exc:
         print_error(f"Daemon unreachable: {exc}")
@@ -357,7 +354,7 @@ def whoami_cmd(
                 f"No active session for '{name}'. Add it to the daemon?",
             ):
                 try:
-                    with Client(constants) as client:
+                    with Client(state) as client:
                         add_resp = client.send("add", {"config": name})
                 except ElhazDaemonError as exc:
                     print_error(f"Daemon unreachable: {exc}")

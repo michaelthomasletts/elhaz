@@ -19,6 +19,7 @@ from elhaz.exceptions import (
     ElhazValidationError,
 )
 
+from ..constants import state
 from .output import print_error, print_json, print_success
 from .prompts import (
     ask_text,
@@ -27,7 +28,6 @@ from .prompts import (
     resolve_name,
     select_local_config,
 )
-from .state import state
 
 app = typer.Typer(
     name="config",
@@ -340,12 +340,10 @@ def config_add(
 ) -> None:
     """Create a new config in the local config store."""
 
-    constants = state.constants
-
     if not name:
         name = ask_text("Config name:", required=True)
 
-    cfg = Config(name, constants)
+    cfg = Config(name, state)
 
     if cfg.file_path.exists():
         if not ask_yes_no(
@@ -377,7 +375,7 @@ def config_add(
 def config_list() -> None:
     """List all config names in the local config store."""
 
-    names = list_local_configs(state.constants)
+    names = list_local_configs(state)
     if not names:
         typer.echo("No configs found.")
         return
@@ -393,10 +391,8 @@ def config_get(
 ) -> None:
     """Return config details as formatted JSON."""
 
-    constants = state.constants
-
     if not name:
-        names = list_local_configs(constants)
+        names = list_local_configs(state)
         if not names:
             typer.secho(
                 "No configs found. Run 'elhaz config add' first.",
@@ -404,9 +400,9 @@ def config_get(
                 err=True,
             )
             raise typer.Exit(1)
-        name = select_local_config(constants, "Select a config:")
+        name = select_local_config(state, "Select a config:")
 
-    cfg = Config(name, constants)
+    cfg = Config(name, state)
 
     if not cfg.file_path.exists():
         if ask_yes_no(
@@ -435,9 +431,8 @@ def config_update(
 ) -> None:
     """Update a config interactively."""
 
-    constants = state.constants
-    name = resolve_name(name, constants, message="Select a config to update:")
-    cfg = Config(name, constants)
+    name = resolve_name(name, state, message="Select a config to update:")
+    cfg = Config(name, state)
 
     try:
         existing = cfg.get()
@@ -470,9 +465,8 @@ def config_remove(
 ) -> None:
     """Remove a config from the local config store."""
 
-    constants = state.constants
-    name = resolve_name(name, constants, message="Select a config to remove:")
-    cfg = Config(name, constants)
+    name = resolve_name(name, state, message="Select a config to remove:")
+    cfg = Config(name, state)
 
     if not cfg.file_path.exists():
         print_error(f"Config '{name}' not found.")

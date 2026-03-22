@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-__all__ = ["Constants"]
+__all__ = ["Constants", "state"]
 
 from pathlib import Path
 
@@ -100,3 +100,6 @@ class Constants:
                 f"Invalid max daemon cache size: '{value}'"
             )
         self._max_daemon_cache_size = value
+
+
+state = Constants()

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.3](https://github.com/61418/elhaz/compare/v0.1.2...v0.1.3) (2026-03-22)
+
+
+### Documentation
+
+* Adding classifiers to pyproject.toml. ([ef06141](https://github.com/61418/elhaz/commit/ef061414a7fdc2fe703078a0c34b2cd7c9e5325b))
+* Adding classifiers to pyproject.toml. ([38e77c5](https://github.com/61418/elhaz/commit/38e77c52783cc2a92a00aed71d8bae046def239f))
+
 ## [0.1.2](https://github.com/61418/elhaz/compare/v0.1.1...v0.1.2) (2026-03-22)
 
 

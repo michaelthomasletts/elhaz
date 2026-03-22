@@ -12,7 +12,7 @@ elhaz
 What is elhaz?
 --------------
 
-elhaz is a local AWS credential broker daemon exposed over a Unix socket.
+ᛉ elhaz ᛉ is a local AWS credential broker daemon exposed over a Unix socket.
 
 Instead of a locally hosted HTTP metadata emulation service (ECS), which requires multiple processes for each assumed RoleArn, elhaz runs a single process (which accepts multiple concurrent connections) and serves automatically refreshed temporary AWS credentials on demand. 
 

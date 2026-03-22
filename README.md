@@ -1,9 +1,11 @@
 <p align="center">
   <img 
-    src="https://raw.githubusercontent.com/michaelthomasletts/elhaz/refs/heads/main/docs/_static/transparent_header_elhaz.png" 
+    src="https://raw.githubusercontent.com/michaelthomasletts/elhaz/refs/heads/main/docs/_static/transparent_header.png" 
     alt="elhaz" 
   />
 </p>
+
+</br>
 
 <div align="center">
 
@@ -67,9 +69,18 @@
 
 </br>
 
+<p align="center">
+  <img 
+    src="https://raw.githubusercontent.com/michaelthomasletts/elhaz/refs/heads/main/docs/_static/transparent_header_elhaz.png" 
+    alt="elhaz" 
+  />
+</p>
+
+</br>
+
 ## What is elhaz?
 
-elhaz is a local AWS credential broker daemon exposed over a Unix socket.
+ᛉ elhaz ᛉ is a local AWS credential broker daemon exposed over a Unix socket.
 
 Instead of a locally hosted HTTP metadata emulation service (ECS), which requires multiple processes for each assumed RoleArn, elhaz runs a single process (which accepts multiple concurrent connections) and serves automatically refreshed temporary AWS credentials on demand. 
 
@@ -95,7 +106,11 @@ pipx install elhaz
 
 ## Usage
 
-Refer to the [quickstart guide](https://61418.io/elhaz/quickstart.html).
+For general instructions on how to use elhaz, refer to the [quickstart guide](https://61418.io/elhaz/quickstart.html).
+
+For technical information, refer to the [CLI documentation](https://61418.io/elhaz/cli/index.html) or run `elhaz --help` from your terminal. 
+
+To learn critical concepts for properly using elhaz, refer to the [this page](https://61418.io/elhaz/concepts/index.html) of the official documentation.
 
 ## License
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.5](https://github.com/61418/elhaz/compare/v0.1.4...v0.1.5) (2026-03-22)
+
+
+### Documentation
+
+* README beautification. ([aee07a6](https://github.com/61418/elhaz/commit/aee07a61f3118abef4dddab245a17d31997f6131))
+* README beautification. ([1b6e2a8](https://github.com/61418/elhaz/commit/1b6e2a83ccbc57be29ddb0078c0d9302d4b6019a))
+
 ## [0.1.4](https://github.com/61418/elhaz/compare/v0.1.3...v0.1.4) (2026-03-22)
 
 

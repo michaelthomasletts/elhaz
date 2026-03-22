@@ -1,6 +1,6 @@
 <p align="center">
   <img 
-    src="https://raw.githubusercontent.com/michaelthomasletts/elhaz/refs/heads/main/docs/_static/transparent_header.png" 
+    src="https://raw.githubusercontent.com/61418/elhaz/refs/heads/main/docs/_static/transparent_header.png" 
     alt="elhaz" 
   />
 </p>
@@ -71,7 +71,7 @@
 
 <p align="center">
   <img 
-    src="https://raw.githubusercontent.com/michaelthomasletts/elhaz/refs/heads/main/docs/_static/transparent_header_elhaz.png" 
+    src="https://raw.githubusercontent.com/61418/elhaz/refs/heads/main/docs/_static/transparent_header_elhaz.png" 
     alt="elhaz" 
   />
 </p>

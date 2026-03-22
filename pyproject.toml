@@ -70,9 +70,6 @@ dev = [
 requires = ["hatchling>=1.27.0"]
 build-backend = "hatchling.build"
 
-[tool.hatch.build]
-include = ["LICENSE", "NOTICE", "boto3_client_cache/**"]
-
 [tool.hatch.build.targets.wheel]
 packages = ["elhaz"]
 

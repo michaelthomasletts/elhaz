@@ -1,0 +1,230 @@
+name: Push
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "elhaz/**"
+      - "docs/**"
+      - "README.md"
+      - "pyproject.toml"
+      - "LICENSE"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Setup, Lint, and Test
+    runs-on: ubuntu-latest
+    if: ${{ !(github.actor == 'github-actions[bot]' && contains(github.event.head_commit.message, '[skip ci]')) }}
+    steps:
+      - name: Check-Out Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        id: setup-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          cache-dependency-glob: "**/pyproject.toml"
+
+      - name: Cache uv Dependencies
+        id: cached-uv-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: uv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/pyproject.toml') }}
+
+      - name: Install Dependencies
+        if: steps.cached-uv-dependencies.outputs.cache-hit != 'true'
+        run: uv sync --all-groups
+
+      - name: Check Formatting with Ruff
+        run: uv run ruff format --check .
+
+      - name: Lint with Ruff
+        run: uv run ruff check .
+
+      - name: Run Unit Tests
+        run: uv run pytest tests/ -v
+
+  changes:
+    name: Detect Changed Paths
+    needs: checks
+    runs-on: ubuntu-latest
+    outputs:
+      release: ${{ steps.filter.outputs.release }}
+      docs_or_code: ${{ steps.filter.outputs.docs_or_code }}
+    steps:
+      - name: Check-Out Repository
+        uses: actions/checkout@v4
+
+      - name: Detect changed paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            release:
+              - "elhaz/**"
+              - "README.md"
+              - "pyproject.toml"
+              - "LICENSE"
+            docs_or_code:
+              - "elhaz/**"
+              - "docs/**"
+              - "pyproject.toml"
+
+  release:
+    name: Release Please
+    needs: [checks, changes]
+    runs-on: ubuntu-latest
+    if: needs.changes.outputs.release == 'true' && !contains(github.event.head_commit.message, '[skip release]')
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      sha: ${{ steps.release.outputs.sha }}
+    steps:
+      - name: Check-Out Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run release-please
+        id: release
+        uses: googleapis/release-please-action@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          release-type: python
+          target-branch: main
+
+  publish-testpypi:
+    name: Publish to TestPyPI
+    needs: [release]
+    runs-on: ubuntu-latest
+    if: needs.release.outputs.release_created == 'true'
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/elhaz
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Check-Out Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release.outputs.sha }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          cache-dependency-glob: "**/pyproject.toml"
+
+      - name: Build package
+        run: uv build
+
+      - name: Publish package to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
+  publish-pypi:
+    name: Publish to PyPI
+    needs: [release, publish-testpypi]
+    runs-on: ubuntu-latest
+    if: needs.release.outputs.release_created == 'true'
+    environment:
+      name: pypi
+      url: https://pypi.org/p/elhaz
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Check-Out Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release.outputs.sha }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          cache-dependency-glob: "**/pyproject.toml"
+
+      - name: Build package
+        run: uv build
+
+      - name: Publish package to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+  docs:
+    name: Build and Deploy Docs
+    needs: [checks, changes, publish-pypi]
+    runs-on: ubuntu-latest
+    if: |
+      always() &&
+      needs.changes.outputs.docs_or_code == 'true' &&
+      (needs.publish-pypi.result == 'success' || needs.publish-pypi.result == 'skipped')
+    permissions:
+      contents: write
+    steps:
+      - name: Check-Out Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        id: setup-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          cache-dependency-glob: "**/pyproject.toml"
+
+      - name: Cache uv Dependencies
+        id: cached-uv-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: uv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/pyproject.toml') }}
+
+      - name: Install Dependencies
+        if: steps.cached-uv-dependencies.outputs.cache-hit != 'true'
+        run: uv sync --all-groups
+
+      - name: Build docs
+        run: uv run --directory docs make clean html
+
+      - name: Disable Jekyll for built docs directory
+        run: touch docs/_build/html/.nojekyll
+
+      - name: Deploy docs to gh-pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          publish_branch: gh-pages
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs/_build/html
+          destination_dir: docs
+          enable_jekyll: false
+          force_orphan: true

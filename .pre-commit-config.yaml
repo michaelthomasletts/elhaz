@@ -1,0 +1,26 @@
+default_language_version:
+  python: python3
+
+repos:
+- repo: local
+  hooks:
+  - id: ruff
+    name: ruff
+    alias: ruff
+    types: [python]
+    entry: uv run ruff check .
+    language: system
+  - id: ruff-format
+    name: ruff-format
+    alias: ruff-format
+    types: [python]
+    entry: uv run ruff format --check .
+    language: system
+  - id: pytest
+    name: pytest
+    alias: pytest
+    types: [python]
+    entry: uv run pytest tests/ -v
+    language: system
+    always_run: true
+    pass_filenames: false

@@ -95,7 +95,7 @@ pipx install elhaz
 
 ## Usage
 
-Refer to the [quickstart guide](https://61418.io/quickstart.html).
+Refer to the [quickstart guide](https://61418.io/elhaz/quickstart.html).
 
 ## License
 

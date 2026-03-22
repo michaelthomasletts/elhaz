@@ -1,6 +1,6 @@
 [project]
 name = "elhaz"
-version = "0.1.5"
+version = "0.1.6"
 description = "A local AWS credential broker daemon exposed over a Unix socket."
 readme = "README.md"
 requires-python = ">=3.10"

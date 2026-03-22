@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.6](https://github.com/61418/elhaz/compare/v0.1.5...v0.1.6) (2026-03-22)
+
+
+### Documentation
+
+* Updated header image. ([bf50e38](https://github.com/61418/elhaz/commit/bf50e381322ffd73416bdafc45a015afbdc03f2d))
+* Updated header image. ([bf4256f](https://github.com/61418/elhaz/commit/bf4256ffb710a8fd92480d8e6f3ca9ac5add6f6c))
+
 ## [0.1.5](https://github.com/61418/elhaz/compare/v0.1.4...v0.1.5) (2026-03-22)
 
 

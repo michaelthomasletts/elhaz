@@ -3,8 +3,6 @@
 Installation
 ============
 
-The following instructions show how to install elhaz globally from PyPI or GitHub using ``pipx`` or ``uv``.
-
 uv
 --
 

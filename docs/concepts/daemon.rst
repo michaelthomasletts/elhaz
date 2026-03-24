@@ -3,31 +3,34 @@
 Daemon
 ======
 
+What does the daemon do?
+------------------------
+
 elhaz uses a daemon process to manage temporary AWS credentials.
 The daemon is responsible for initializing and caching AWS sessions (in a bounded LRU cache), refreshing temporary AWS credentials, and providing credentials to the CLI when requested.
 
-To do this, elhaz uses a **Unix domain socket** for local inter-process communication between the CLI and the daemon.
+To do this, elhaz uses a **Unix domain socket** for local IPC between the CLI and the daemon.
 
 The daemon enables a single, long-lived credential authority on the local machine. 
-Instead of repeatedly creating new sessions or calling AWS STS from multiple processes, elhaz reuses existing sessions and refreshes them in the background using boto3-refresh-session.
+Instead of redundantly creating new sessions or calling AWS STS from *multiple processes*, elhaz reuses existing sessions (which are configured by :ref:`config <config>` objects) and refreshes them in the background using boto3-refresh-session within a *single process*.
 
 This provides:
 
-- Multiple role assumptions without redundant session creation
-- Reduced redundant calls to AWS STS
-- Consistent credential reuse across processes
+- Enhanced security via Unix socket permissions and local-only access
+- Multiple role assumptions without redundant session creation or STS calls
+- Consistent credential reuse
 - Immediate access to valid credentials
 - Centralized lifecycle management for temporary sessions
 
-Why not HTTP with ECS metadata emulation?
------------------------------------------
+Why not locally hosted HTTP for ECS metadata service emulation?
+---------------------------------------------------------------
 
 The AWS CLI allows ECS metadata emulation via a locally hosted HTTP endpoint, configured using ``AWS_CONTAINER_CREDENTIALS_FULL_URI``.
-This technique is native to the AWS ecosystem and is used by many tools to provide credentials to SDKs.
+This technique is native to the AWS ecosystem and is used by many popular tools to provide credentials to SDKs and other tools.
 
 However, this approach has some tradeoffs for a local developer tool:
 
-- Additional HTTP server complexity
+- HTTP server complexity/weight
 - Optional TLS and authorization concerns
 - Increased surface area for local networking and configuration
 - Managing multiple endpoints or routing logic for multiple assumed roles
@@ -41,9 +44,35 @@ In contrast, elhaz uses a Unix domain socket, which is:
 
 For local development, where both the CLI and daemon run on the same machine, a Unix domain socket provides a minimal and efficient communication mechanism without requiring HTTP semantics.
 
-Notes
------
+A direct quote from Lachlan Donald, founder of aws-vault:
 
-- The daemon is an implementation detail of elhaz's credential coordination model.
-- All CLI commands (e.g., ``exec``, ``shell``, ``export``) interact with the daemon transparently.
-- The daemon maintains exactly one active session (until removed or the server is stopped) per configuration and refreshes credentials automatically based on expiration.
+    *"IMO a unix socket is vastly better."*
+
+How do I start the daemon?
+--------------------------
+
+First, you need to have :ref:`at least one config created <elhaz-config-add>`. 
+
+After that condition is satisfied, check the docs for :ref:`elhaz daemon start <elhaz-daemon-start>`.
+
+How do I stop the daemon?
+-------------------------
+
+Check the docs for :ref:`elhaz daemon stop <elhaz-daemon-stop>`.
+
+How do I read the logs from the daemon?
+---------------------------------------
+
+Check the docs for :ref:`elhaz daemon logs <elhaz-daemon-logs>`.
+
+How do I add a config to the daemon?
+------------------------------------
+
+Good catch. 
+In order for the daemon to manage credentials for a config, that config must be added to the daemon's cache.
+To do that, check the docs for :ref:`elhaz config add <elhaz-config-add>`.
+
+How do I remove a config from the daemon?
+-----------------------------------------
+
+Check the docs for :ref:`elhaz config remove <elhaz-config-remove>`.

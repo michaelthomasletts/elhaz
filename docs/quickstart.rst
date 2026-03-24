@@ -8,7 +8,9 @@ Those credentials can be passed to AWS profiles, SDKs, CLIs, scripts, processes,
 
 To quickly get started using elhaz, follow this basic guide.
 
-For more detailed information on all of the available commands and options, see the :ref:`cli` documentation.
+For more detailed information on the concepts and architecture behind elhaz, see the :ref:`concepts` documentation.
+
+For technical information on all of the available commands and options, see the :ref:`cli` documentation.
 
 Initialization
 --------------
@@ -17,17 +19,12 @@ Initialization
 
     To see all of the available commands and options, use ``--help`` on any command.
 
-In order to use elhaz, you must set up at least one config. 
+In order to use elhaz, you must set up at least one "config". 
 
-A config represents a set of parameters that `boto3-refresh-session <https://github.com/61418/boto3-refresh-session>`_ uses in order to initialize an AWS session which automatically refreshes temporary AWS credentials.
+A :ref:`config <config>` represents a set of parameters that `boto3-refresh-session <https://github.com/61418/boto3-refresh-session>`_ uses in order to initialize an AWS session which automatically refreshes temporary AWS credentials.
 
-.. tip::
+To create a config, run this:
 
-    You can also create configs manually by hand if you prefer. 
-    However, the easiest way to create a config is to use the interactive prompts provided by elhaz as shown below.
-
-    The default location for configs is ``~/.elhaz/configs/``.
-    Each config is a YAML file with any name you choose with a ``.yaml`` extension.
 .. code-block:: bash
 
     elhaz config add
@@ -36,21 +33,16 @@ A config represents a set of parameters that `boto3-refresh-session <https://git
 
 .. tip::
 
-    The only required config parameter is ``RoleArn``. 
+    The only required config parameter is ``RoleArn`` in the :ref:`AssumeRole <assumerole>` object. 
     All other parameters are completely optional.
 
-.. tip::
-
-    You can edit, view, and delete configs at any time.
-    Check available commands by entering ``elhaz config --help``.
-
-Next, you must initialize the elhaz daemon.
+Next, initialize the daemon, like so:
 
 .. code-block:: bash
 
     elhaz daemon start
 
-In order to use the config you just created, you must initialize the AWS session for your config and add it into the daemon's session cache.
+In order to use the config you just created, you must initialize the AWS session for your config and add it into the daemon's session cache, like this:
 
 .. code-block:: bash
     

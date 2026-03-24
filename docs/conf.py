@@ -22,11 +22,12 @@ author = str(pyproject["project"]["maintainers"][0]["name"])  # type: ignore
 copyright = f"{date.today().year}, {author}"
 release = str(pyproject["project"]["version"])  # type: ignore
 source_encoding = "utf-8"
-source_suffix = ".rst"
+source_suffix = {".rst": "restructuredtext", ".md": "markdown"}
 extensions = [
     "sphinx.ext.intersphinx",
     "sphinx_copybutton",
     "sphinxext.opengraph",
+    "myst_parser",
 ]
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]

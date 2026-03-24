@@ -3,9 +3,14 @@
 Session
 =======
 
-.. attention::
+.. tip::
 
     The ``Session`` object is completely optional in a config.
+
+.. warning::
+
+    It is not recommended to provide ``aws_access_key_id``, ``aws_secret_access_key``, or ``aws_session_token`` in the ``Session`` object of your config!
+    These parameters are only provided for interoperability with AWS.    
 
 The ``Session`` object in a config represents parameters for :class:`boto3.session.Session`.
 

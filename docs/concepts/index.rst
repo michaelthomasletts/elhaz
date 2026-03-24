@@ -4,7 +4,7 @@ Concepts
 ========
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
     Config <config>
     Daemon <daemon>

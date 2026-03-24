@@ -1,7 +1,7 @@
 [project]
 name = "elhaz"
 version = "0.1.6"
-description = "A local AWS credential broker daemon exposed over a Unix socket."
+description = "A local daemon-backed AWS temporary credential broker, exposed over a Unix socket and controlled via CLI."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MPL-2.0" }
@@ -57,10 +57,12 @@ elhaz = "elhaz.cli.__main__:main"
 [dependency-groups]
 dev = [
     "furo>=2025.12.19",
+    "myst-parser>=4.0.1",
     "pre-commit>=4.5.1",
     "pytest>=9.0.2",
     "ruff>=0.15.5",
     "sphinx>=8.1.3",
+    "sphinx-autobuild>=2024.10.3",
     "sphinx-copybutton>=0.5.2",
     "sphinxext-opengraph[social-cards]>=0.13.0",
     "tomlkit>=0.14.0",

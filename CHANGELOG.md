@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.7](https://github.com/61418/elhaz/compare/v0.1.6...v0.1.7) (2026-03-24)
+
+
+### Documentation
+
+* Refining Concepts docs and project description. ([949e7f3](https://github.com/61418/elhaz/commit/949e7f39ae1d7c17809f8638939a72dece1e1378))
+* Refining Concepts docs and project description. ([bda5ddc](https://github.com/61418/elhaz/commit/bda5ddc17802b78c69eb09c5db3597f5d1b9a8ae))
+
 ## [0.1.6](https://github.com/61418/elhaz/compare/v0.1.5...v0.1.6) (2026-03-22)
 
 

@@ -44,6 +44,8 @@ Commands
      - Remove an active session from the daemon's cache.
    * - :ref:`start <elhaz-daemon-start>`
      - Start the daemon in the background.
+   * - :ref:`status <elhaz-daemon-status>`
+     - Report whether the daemon is currently running.
    * - :ref:`stop <elhaz-daemon-stop>`
      - Stop the running daemon gracefully.
 
@@ -56,4 +58,5 @@ Commands
    elhaz daemon logs <elhaz-daemon-logs>
    elhaz daemon remove <elhaz-daemon-remove>
    elhaz daemon start <elhaz-daemon-start>
+   elhaz daemon status <elhaz-daemon-status>
    elhaz daemon stop <elhaz-daemon-stop>

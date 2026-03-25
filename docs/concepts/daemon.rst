@@ -81,3 +81,8 @@ How do I see which AWS sessions are currently active in the daemon?
 -------------------------------------------------------------------
 
 Check the docs for :ref:`elhaz daemon list <elhaz-daemon-list>`.
+
+How can I check the status of the daemon?
+-----------------------------------------
+
+Check the docs for :ref:`elhaz daemon status <elhaz-daemon-status>`.

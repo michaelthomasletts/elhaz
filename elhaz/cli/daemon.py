@@ -119,6 +119,21 @@ def _daemon_subprocess_cmd() -> list[str]:
     ]
 
 
+@app.command("status")
+def daemon_status() -> None:
+    """Report whether the daemon is currently running.
+
+    Exits with code 0 if the daemon is reachable, 1 if it is not.
+    """
+
+    if _is_running():
+        typer.secho("Daemon is running.", fg=typer.colors.GREEN)
+        typer.echo(f"  Socket: {state.socket_path}")
+    else:
+        typer.secho("Daemon is not running.", fg=typer.colors.YELLOW)
+        raise typer.Exit(1)
+
+
 @app.command("start")
 def daemon_start() -> None:
     """Start the daemon in the background."""

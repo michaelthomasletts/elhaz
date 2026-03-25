@@ -153,6 +153,28 @@ def test_daemon_subprocess_cmd_contains_max_cache_size() -> None:
     assert cmd[idx + 1] == str(_const.state.max_daemon_cache_size)
 
 
+def test_daemon_status_running(monkeypatch) -> None:
+    monkeypatch.setattr(daemon_module, "_is_running", lambda: True)
+    result = runner.invoke(app, ["status"])
+    assert result.exit_code == 0
+    assert "running" in result.output.lower()
+
+
+def test_daemon_status_running_shows_socket_path(monkeypatch) -> None:
+    from elhaz import constants as _const
+
+    monkeypatch.setattr(daemon_module, "_is_running", lambda: True)
+    result = runner.invoke(app, ["status"])
+    assert str(_const.state.socket_path) in result.output
+
+
+def test_daemon_status_not_running_exits_1(monkeypatch) -> None:
+    monkeypatch.setattr(daemon_module, "_is_running", lambda: False)
+    result = runner.invoke(app, ["status"])
+    assert result.exit_code == 1
+    assert "not running" in result.output.lower()
+
+
 def test_daemon_start_already_running(monkeypatch) -> None:
     monkeypatch.setattr(daemon_module, "_is_running", lambda: True)
     result = runner.invoke(app, ["start"])

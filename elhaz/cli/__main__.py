@@ -35,8 +35,6 @@ from .output import print_error, print_json
 from .prompts import ask_yes_no, resolve_name
 
 app_help_text = """
-ᛉ elhaz ᛉ
-
 Manage automatically refreshed temporary AWS credentials via local daemon.
 """
 

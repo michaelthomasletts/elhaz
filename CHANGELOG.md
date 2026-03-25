@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.0](https://github.com/61418/elhaz/compare/v0.3.0...v0.4.0) (2026-03-25)
+
+
+### Features
+
+* Added a daemon status command. ([36ae37b](https://github.com/61418/elhaz/commit/36ae37b253f915c166209c9c8f0c64103ef2d394))
+* Added a daemon status command. ([575ad8b](https://github.com/61418/elhaz/commit/575ad8bd4eeee8ef2ac5e98783eb25e3c306a403))
+
 ## [0.3.0](https://github.com/61418/elhaz/compare/v0.2.0...v0.3.0) (2026-03-25)
 
 

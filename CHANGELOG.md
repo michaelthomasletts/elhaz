@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.0](https://github.com/61418/elhaz/compare/v0.1.8...v0.2.0) (2026-03-25)
+
+
+### Features
+
+* Adding --obscure flat to config get and daemon export ([4bb45ac](https://github.com/61418/elhaz/commit/4bb45ac370fe4613ef93c716ece9d2337f64b0bc))
+* Adding --obscure flat to config get and export ([48b93cb](https://github.com/61418/elhaz/commit/48b93cb6b6cbcd09abf3061bbc9b01fb6337f0d7))
+
 ## [0.1.8](https://github.com/61418/elhaz/compare/v0.1.7...v0.1.8) (2026-03-25)
 
 

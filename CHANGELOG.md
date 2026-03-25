@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.8](https://github.com/61418/elhaz/compare/v0.1.7...v0.1.8) (2026-03-25)
+
+
+### Documentation
+
+* Remove unicode characters from docs. ([f08494c](https://github.com/61418/elhaz/commit/f08494c5607a86c893cc525e07df0dbc1eebf8d4))
+* Remove unicode characters from docs. ([02c707b](https://github.com/61418/elhaz/commit/02c707b8685b2de33a1406131bd9d283bbe47eaa))
+
 ## [0.1.7](https://github.com/61418/elhaz/compare/v0.1.6...v0.1.7) (2026-03-24)
 
 

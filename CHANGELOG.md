@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.1](https://github.com/61418/elhaz/compare/v0.4.0...v0.4.1) (2026-04-04)
+
+
+### Bug Fixes
+
+* Removing deadlock with client timeout ([34c082c](https://github.com/61418/elhaz/commit/34c082cd34c5718cb8db1bb23302c8e84a959ea5))
+* Removing deadlock with client timeout ([21a5db8](https://github.com/61418/elhaz/commit/21a5db81e475924ba3d80af41983fda62ad0bfc2))
+
 ## [0.4.0](https://github.com/61418/elhaz/compare/v0.3.0...v0.4.0) (2026-03-25)
 
 

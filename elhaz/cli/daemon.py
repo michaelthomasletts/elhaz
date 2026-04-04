@@ -114,6 +114,8 @@ def _daemon_subprocess_cmd() -> list[str]:
         str(state.max_unix_socket_connections),
         "--max-daemon-cache-size",
         str(state.max_daemon_cache_size),
+        "--client-timeout",
+        str(state.client_timeout),
         "daemon",
         "_serve",
     ]

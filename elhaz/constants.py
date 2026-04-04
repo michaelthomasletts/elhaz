@@ -32,6 +32,11 @@ class Constants:
     max_daemon_cache_size : int
         The maximum number of sessions the daemon session cache will retain
         before evicting the least recently used entry. Default is 10.
+    client_timeout : float
+        Seconds before a ``Client`` socket read or write gives up waiting for
+        the daemon. Prevents callers from hanging indefinitely when the daemon
+        is slow or a circular ``credential_process`` reference causes a
+        re-entrant request. Default is 30.0.
     """
 
     _config_dir: Path = Path.home() / ".elhaz/configs"
@@ -40,6 +45,7 @@ class Constants:
     _daemon_logging_path: Path = Path.home() / ".elhaz/logs/daemon.log"
     _max_unix_socket_connections: int = 5
     _max_daemon_cache_size: int = 10
+    _client_timeout: float = 30.0
 
     @property
     def config_dir(self) -> Path:
@@ -100,6 +106,16 @@ class Constants:
                 f"Invalid max daemon cache size: '{value}'"
             )
         self._max_daemon_cache_size = value
+
+    @property
+    def client_timeout(self) -> float:
+        return self._client_timeout
+
+    @client_timeout.setter
+    def client_timeout(self, value: float) -> None:
+        if not isinstance(value, (int, float)) or value <= 0:
+            raise ElhazValidationError(f"Invalid client timeout: '{value}'")
+        self._client_timeout = float(value)
 
 
 state = Constants()

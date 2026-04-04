@@ -120,6 +120,11 @@ class DaemonService:
     def add(self, config: str) -> Dict[str, str]:
         """Initialize and cache a new session for a named config.
 
+        Session construction happens outside the lock because it may invoke
+        external processes (e.g. a ``credential_process`` entry in an AWS
+        profile) that themselves connect back to the daemon.  Holding the
+        lock during that call would deadlock those nested requests.
+
         Parameters
         ----------
         config : str
@@ -131,8 +136,9 @@ class DaemonService:
             Confirmation payload containing the config name.
         """
 
+        session = Session(config)
         with self._lock:
-            self._cache[config] = Session(config)
+            self._cache[config] = session
             return {"config": config}
 
     def credentials(self, config: str) -> Dict[str, Any]:
@@ -651,6 +657,7 @@ class Client:
 
     def __init__(self, constants: Constants) -> None:
         self._sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self._sock.settimeout(constants.client_timeout)
         try:
             self._sock.connect(str(constants.socket_path))
         except OSError as exc:

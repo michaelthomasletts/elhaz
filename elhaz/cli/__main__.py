@@ -90,6 +90,16 @@ def _callback(
         ),
         show_default=False,
     ),
+    client_timeout: Optional[float] = typer.Option(
+        None,
+        "--client-timeout",
+        "-ct",
+        help=(
+            "Seconds before a daemon client socket times out. "
+            f"Default: {Constants._client_timeout}"
+        ),
+        show_default=False,
+    ),
 ) -> None:
     """elhaz — manage refreshable AWS credentials."""
     if config_dir is not None:
@@ -102,6 +112,8 @@ def _callback(
         state.max_unix_socket_connections = max_unix_socket_connections
     if max_daemon_cache_size is not None:
         state.max_daemon_cache_size = max_daemon_cache_size
+    if client_timeout is not None:
+        state.client_timeout = client_timeout
 
 
 def _fetch_credentials(name: str) -> dict:

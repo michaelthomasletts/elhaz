@@ -38,6 +38,12 @@ Options
    Maximum number of sessions the daemon will retain in its LRU cache before
    evicting the least recently used entry. Default: ``10``.
 
+``--client-timeout``, ``-ct`` *FLOAT*
+   Seconds before a daemon client socket read or write times out. Prevents
+   callers from hanging indefinitely when the daemon is slow or a circular
+   ``credential_process`` reference causes a re-entrant request.
+   Default: ``30.0``.
+
 ``--help``
    Show help message and exit.
 

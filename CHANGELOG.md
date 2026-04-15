@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.2](https://github.com/61418/elhaz/compare/v0.4.1...v0.4.2) (2026-04-15)
+
+
+### Documentation
+
+* Clarifying SSO support in docs ([bac9ee8](https://github.com/61418/elhaz/commit/bac9ee89e677a804b9cf5994bf7975c847d89e03))
+* Clarifying SSO support in docs ([dc0748f](https://github.com/61418/elhaz/commit/dc0748f4a140857bc9bd646cda9909521d06bd6b))
+
 ## [0.4.1](https://github.com/61418/elhaz/compare/v0.4.0...v0.4.1) (2026-04-04)
 
 

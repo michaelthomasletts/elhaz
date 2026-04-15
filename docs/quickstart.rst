@@ -108,6 +108,34 @@ You can also list all active AWS sessions in the daemon's session cache.
 
     elhaz daemon list
 
+IAM Identity Center (SSO)
+-------------------------
+
+If you haven't already locally configured AWS IAM Identity Center (SSO), do so like this:
+
+.. code-block:: bash
+
+    aws configure sso
+
+Follow the prompts to complete the configuration according to your IAM Identity Center setup.
+
+Next, login to SSO like this:
+
+.. code-block:: bash
+
+    aws sso login
+
+Depending on your SSO configuration, you may be prompted to open a browser and authenticate against your Identity Center account in order to complete the login.
+This process may require OTP's, may employ Okta/Google Workspace, etc.
+Whatever the exact process, complete it like you normally would in order to authenticate yourself against IAM Identity Center.
+Once completed, you may now begin using elhaz to acquire temporary credentials for assumed roles.
+
+Don't forget to logout when you're done with your SSO session, like this:
+
+.. code-block:: bash
+
+    aws sso logout
+
 Shutdown
 --------
 

@@ -20,7 +20,9 @@ elhaz caches AWS sessions for however long the daemon is kept alive (or sessions
 
 Unix-socket IPC is lightweight and gives a tighter local boundary than HTTP, avoids exposing local credential endpoints over TCP, and allows temporary credentials to live in memory rather than at rest on disk.
 
-**elhaz makes multi-role local AWS workflows cleaner by combining brokered access, in-memory caching, and host-local IPC into one model.**
+Crucially, because elhaz uses `boto3-refresh-session <https://github.com/61418/boto3-refresh-session>`_ as its core dependency for refreshing temporary AWS security credentials, which in turn depends on botocore, elhaz supports IAM Identity Center (SSO) using the AWS CLI.
+
+**elhaz makes multi-role local AWS workflows cleaner by combining brokered access, in-memory caching, IAM Identity Center (SSO) support, and host-local IPC into one model.**
 
 How do I use elhaz?
 -------------------
@@ -37,13 +39,11 @@ How did elhaz get its name?
 ---------------------------
 
 Initially, the intention was to name this project "assume".
-However, that namespace was already taken and, frankly, "assume" seems a little trite, derivative, and *on-the-nose*. 
+However, that namespace was already taken and, frankly, "assume" is trite.
 
-The algriz rune (also called "elhaz") is the 15th letter of the Elder Futhark alphabet. 
-It symbolizes *protection and defense*, among other related themes and concepts which befit a local credential broker. 
-
-"elhaz" is *pithy*. 
-Ideally, a CLI tool ought to have a *memorable and compact* name. 
+The algiz rune (also called "elhaz") is the 15th letter of the Elder Futhark alphabet. 
+Elhaz symbolizes protection and defense, which are fitting themes for a local credential broker. 
+Elhaz, like "sphinx" or "hugo", is memorable and compact, which makes it a great fit for any CLI tool!
 
 .. toctree::
    :maxdepth: 1

@@ -86,7 +86,9 @@ elhaz caches AWS sessions for however long the daemon is kept alive (or sessions
 
 Unix-socket IPC is lightweight and gives a tighter local boundary than HTTP, avoids exposing local credential endpoints over TCP, and allows temporary credentials to live in memory rather than at rest on disk.
 
-**elhaz makes multi-role local AWS workflows cleaner by combining brokered access, in-memory caching, and host-local IPC into one model.**
+Crucially, because elhaz uses [boto3-refresh-session](https://github.com/61418/boto3-refresh-session) as its core dependency for refreshing temporary AWS security credentials, which in turn depends on botocore, elhaz supports IAM Identity Center (SSO) using the AWS CLI.
+
+**elhaz makes multi-role local AWS workflows cleaner by combining brokered access, in-memory caching, IAM Identity Center (SSO) support, and host-local IPC into one model.**
 
 elhaz was authored by [Mike Letts](https://github.com/michaelthomasletts) and is maintained by [61418](https://github.com/61418).
 
@@ -106,9 +108,9 @@ pipx install elhaz
 
 ## Usage
 
-To get started, check the [quickstart guide](https://61418.io/elhaz/quickstart.html).
+To get started with using elhaz, check the [quickstart guide](https://61418.io/elhaz/quickstart.html).
 
-To learn critical concepts for using this tool, check the [concepts section](https://61418.io/elhaz/concepts/index.html) of the docs.
+To learn critical concepts for using elhaz, check the [concepts section](https://61418.io/elhaz/concepts/index.html) of the docs.
 
 For technical details, check the [CLI docs](https://61418.io/elhaz/cli/index.html).
 

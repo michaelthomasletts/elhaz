@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.0](https://github.com/61418/elhaz/compare/v0.4.2...v0.5.0) (2026-04-15)
+
+
+### Features
+
+* Adding Meta object for adding metadata to enrich configs ([ee6aaf9](https://github.com/61418/elhaz/commit/ee6aaf9b7b9a8329f9e03a083dc2a322e0cb4855))
+* Adding Meta object for adding metadata to enrich configs ([502c7e4](https://github.com/61418/elhaz/commit/502c7e44d0ef62eb33dc0c58bd89cdad7dd1a870))
+
 ## [0.4.2](https://github.com/61418/elhaz/compare/v0.4.1...v0.4.2) (2026-04-15)
 
 

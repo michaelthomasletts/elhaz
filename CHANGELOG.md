@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.5.2](https://github.com/61418/elhaz/compare/v0.5.1...v0.5.2) (2026-04-28)
+
+
+### Documentation
+
+* Specifying Policy/PolicyArn params in config docs ([1c89b0f](https://github.com/61418/elhaz/commit/1c89b0fe3a901aa62577e51fafb35487d31d5ecf))
+* Specifying Policy/PolicyArn params in config docs ([ba66bb6](https://github.com/61418/elhaz/commit/ba66bb6b2f5ec5f2c18e7318f1da7213c1fb5ec8))
+* Updating installation docs with github link ([1e70aa0](https://github.com/61418/elhaz/commit/1e70aa033e2f58424f9cef4c5cc7de7e6955cb3b))
+* Updating installation docs with github link ([5472bcf](https://github.com/61418/elhaz/commit/5472bcfa951b406a93c1be9084d15ae3fc673e68))
+
 ## [0.5.1](https://github.com/61418/elhaz/compare/v0.5.0...v0.5.1) (2026-04-16)
 
 

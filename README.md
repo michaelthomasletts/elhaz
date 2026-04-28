@@ -114,6 +114,10 @@ To learn critical concepts for using elhaz, check the [concepts section](https:/
 
 For technical details, check the [CLI docs](https://61418.io/elhaz/cli/index.html).
 
+## Testimonials
+
+In this [blog post](https://engseclabs.com/blog/agent-credential-isolation/), EngSecLabs cleverly mounts the Unix socket managed by elhaz to a docker container in order to sandbox/isolate an AI agent, effectively using elhaz like a credential proxy.
+
 ## License
 
 elhaz is licensed by the [Mozilla Public License 2.0 (MPL-2.0)](https://github.com/61418/elhaz/blob/main/LICENSE).

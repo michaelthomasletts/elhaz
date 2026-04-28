@@ -7,6 +7,12 @@ AssumeRole
 
     The only required parameter for the ``AssumeRole`` object is ``RoleArn``.
     All other parameters are completely optional.
+
+.. tip::
+
+    The ``Policy`` parameter is a string that contains a JSON policy. 
+    The ``PolicyArns`` parameter is a list of ARNs for managed policies. 
+    You can use either or both of these parameters to specify the permissions for the assumed role session, like a `session policy <https://aws.amazon.com/blogs/security/create-fine-grained-session-permissions-using-iam-managed-policies/>`_.
   
 .. warning:: 
 

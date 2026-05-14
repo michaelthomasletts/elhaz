@@ -114,9 +114,11 @@ To learn critical concepts for using elhaz, check the [concepts section](https:/
 
 For technical details, check the [CLI docs](https://61418.io/elhaz/cli/index.html).
 
-## Testimonials
+## Recognition and Testimonials
 
-In this [blog post](https://engseclabs.com/blog/agent-credential-isolation/), EngSecLabs cleverly mounts the Unix socket managed by elhaz to a docker container in order to sandbox/isolate an AI agent, effectively using elhaz like a credential proxy.
+In May 2026, elhaz was featured by [TL;DR Sec newsletter](https://tldrsec.com/p/tldr-sec-327).
+
+In this [blog post](https://engseclabs.com/blog/agent-credential-isolation/), EngSecLabs cleverly mounts the Unix socket managed by elhaz to a Docker container in order to sandbox an AI agent.
 
 ## License
 
